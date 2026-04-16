@@ -1,0 +1,304 @@
+import type { AxiosInstance } from 'axios'
+import { createWeaviateAxios } from './http'
+
+export interface WeaviateMeta {
+  hostname?: string
+  version?: string
+  modules?: Record<string, unknown>
+}
+
+export interface WeaviateClass {
+  class: string
+  description?: string
+  vectorizer?: string
+  vectorIndexType?: string
+  properties?: WeaviateProperty[]
+  multiTenancyConfig?: { enabled?: boolean }
+}
+
+export interface WeaviateProperty {
+  name: string
+  dataType: string[]
+  description?: string
+  indexInverted?: boolean
+  tokenization?: string
+}
+
+export interface WeaviateObject {
+  class?: string
+  id?: string
+  properties?: Record<string, unknown>
+  vector?: number[]
+  creationTimeUnix?: number
+  lastUpdateTimeUnix?: number
+}
+
+export interface GraphQLError {
+  message: string
+}
+
+export async function fetchMeta(client: AxiosInstance = createWeaviateAxios()) {
+  const { data, status } = await client.get<WeaviateMeta>('/v1/meta')
+  if (status !== 200) throw new Error(`meta HTTP ${status}`)
+  return data
+}
+
+/** GET /v1/nodes 单条节点（字段随 Weaviate 版本可能增减） */
+export interface WeaviateNodeInfo {
+  name?: string
+  status?: string
+  version?: string
+  operationalMode?: string
+  gitHash?: string
+  [key: string]: unknown
+}
+
+export interface WeaviateNodesResponse {
+  nodes?: WeaviateNodeInfo[]
+}
+
+/** 仪表盘展示用：固定四项文案 */
+export interface WeaviateNodeRow {
+  name: string
+  operationalMode: string
+  status: string
+  version: string
+}
+
+function pickNodeStr(v: unknown): string {
+  if (v == null || v === '') return '—'
+  return String(v)
+}
+
+/** 将 /v1/nodes 响应解析为行列表（兼容 `{ nodes: [] }` 或少数实现直接返回数组） */
+export function parseWeaviateNodesPayload(raw: unknown): WeaviateNodeRow[] {
+  if (raw == null) return []
+  let list: unknown[] = []
+  if (Array.isArray(raw)) list = raw
+  else if (typeof raw === 'object' && raw !== null && Array.isArray((raw as WeaviateNodesResponse).nodes)) {
+    list = (raw as WeaviateNodesResponse).nodes!
+  }
+  return list.map((item) => {
+    if (!item || typeof item !== 'object') {
+      return {
+        name: '—',
+        operationalMode: '—',
+        status: '—',
+        version: '—',
+      }
+    }
+    const o = item as Record<string, unknown>
+    return {
+      name: pickNodeStr(o.name),
+      operationalMode: pickNodeStr(o.operationalMode),
+      status: pickNodeStr(o.status),
+      version: pickNodeStr(o.version),
+    }
+  })
+}
+
+/** 集群节点状态，见 https://weaviate.io/developers/weaviate/api/rest/nodes */
+export async function fetchNodes(
+  client: AxiosInstance = createWeaviateAxios(),
+  opts?: { output?: 'minimal' | 'verbose' },
+) {
+  const params = new URLSearchParams()
+  if (opts?.output) params.set('output', opts.output)
+  const qs = params.toString()
+  const url = qs ? `/v1/nodes?${qs}` : '/v1/nodes'
+  const { data, status } = await client.get<unknown>(url)
+  if (status !== 200) throw new Error(`nodes HTTP ${status}`)
+  return data
+}
+
+export async function fetchReady(client: AxiosInstance = createWeaviateAxios()) {
+  const { status } = await client.get('/v1/.well-known/ready')
+  return status === 200
+}
+
+export async function fetchLive(client: AxiosInstance = createWeaviateAxios()) {
+  const { status } = await client.get('/v1/.well-known/live')
+  return status === 200
+}
+
+export async function fetchSchema(client: AxiosInstance = createWeaviateAxios()) {
+  const { data, status } = await client.get<{ classes?: WeaviateClass[] }>('/v1/schema')
+  if (status !== 200) throw new Error(`schema HTTP ${status}`)
+  const body = data as { classes?: WeaviateClass[] }
+  if (Array.isArray(body?.classes)) return body.classes
+  return []
+}
+
+export async function fetchClassSchema(
+  className: string,
+  client: AxiosInstance = createWeaviateAxios(),
+) {
+  const { data, status } = await client.get<WeaviateClass>(`/v1/schema/${encodeURIComponent(className)}`)
+  if (status !== 200) throw new Error(`class schema HTTP ${status}`)
+  return data
+}
+
+export async function graphqlQuery<T = unknown>(
+  query: string,
+  client: AxiosInstance = createWeaviateAxios(),
+): Promise<{ inner: T | undefined; errors?: GraphQLError[] }> {
+  const { data, status } = await client.post<{ data?: T; errors?: GraphQLError[] }>(
+    '/v1/graphql',
+    { query },
+    { headers: { 'Content-Type': 'application/json' } },
+  )
+  if (status !== 200) throw new Error(`GraphQL HTTP ${status}`)
+  return { inner: data.data, errors: data.errors }
+}
+
+export function escapeGraphQLClassName(name: string) {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+    return `\`${name.replace(/`/g, '\\`')}\``
+  }
+  return name
+}
+
+export async function aggregateCount(
+  className: string,
+  client: AxiosInstance = createWeaviateAxios(),
+): Promise<number | null> {
+  const g = escapeGraphQLClassName(className)
+  const q = `{ Aggregate { ${g} { meta { count } } } }`
+  const res = await graphqlQuery<{
+    Aggregate: Record<string, { meta?: { count?: number } }[]>
+  }>(q, client)
+  if (res.errors?.length) return null
+  const agg = res.inner?.Aggregate
+  if (!agg) return null
+  const bucket = agg[className] ?? Object.values(agg)[0]
+  const row = bucket?.[0]
+  const n = row?.meta?.count
+  return typeof n === 'number' ? n : null
+}
+
+export async function listObjects(
+  className: string,
+  opts: { limit?: number; after?: string },
+  client: AxiosInstance = createWeaviateAxios(),
+) {
+  const params = new URLSearchParams()
+  params.set('class', className)
+  params.set('limit', String(opts.limit ?? 20))
+  if (opts.after) params.set('after', opts.after)
+
+  const { data, status } = await client.get<{
+    objects?: WeaviateObject[]
+    totalResults?: number
+  }>(`/v1/objects?${params.toString()}`)
+  if (status !== 200) throw new Error(`objects HTTP ${status}`)
+  return data
+}
+
+export async function getObjectById(
+  id: string,
+  opts?: { includeVector?: boolean },
+  client: AxiosInstance = createWeaviateAxios(),
+) {
+  const params = new URLSearchParams()
+  if (opts?.includeVector) params.set('include', 'vector')
+  const qs = params.toString()
+  const { data, status } = await client.get<WeaviateObject>(
+    `/v1/objects/${encodeURIComponent(id)}${qs ? `?${qs}` : ''}`,
+  )
+  if (status !== 200) throw new Error(`object HTTP ${status}`)
+  return data
+}
+
+export interface NearVectorHit {
+  id?: string
+  distance?: number
+  certainty?: number
+  properties: Record<string, unknown>
+  vectorPreview?: number[]
+}
+
+export async function nearVectorSearch(
+  className: string,
+  vector: number[],
+  limit: number,
+  propertyNames: string[],
+  client: AxiosInstance = createWeaviateAxios(),
+): Promise<NearVectorHit[]> {
+  const g = escapeGraphQLClassName(className)
+  const vec = vector.map((n) => (Number.isFinite(n) ? n : 0)).join(',')
+  const fields = [
+    '_additional { id distance certainty }',
+    ...propertyNames.filter((p) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(p)),
+  ].join('\n')
+  const q = `{
+    Get {
+      ${g}(
+        nearVector: { vector: [${vec}] }
+        limit: ${limit}
+      ) {
+        ${fields}
+      }
+    }
+  }`
+  const res = await graphqlQuery<{
+    Get: Record<string, Record<string, unknown>[]>
+  }>(q, client)
+  if (res.errors?.length) {
+    const msg = res.errors.map((e) => e.message).join('; ')
+    throw new Error(msg)
+  }
+  const rows = res.inner?.Get?.[className] ?? []
+  return rows.map((row) => {
+    const add = row._additional as { id?: string; distance?: number; certainty?: number } | undefined
+    const { _additional, ...rest } = row
+    return {
+      id: add?.id,
+      distance: add?.distance,
+      certainty: add?.certainty,
+      properties: rest as Record<string, unknown>,
+    }
+  })
+}
+
+export async function nearTextSearch(
+  className: string,
+  text: string,
+  limit: number,
+  propertyNames: string[],
+  client: AxiosInstance = createWeaviateAxios(),
+): Promise<NearVectorHit[]> {
+  const g = escapeGraphQLClassName(className)
+  const escaped = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  const fields = [
+    '_additional { id distance certainty }',
+    ...propertyNames.filter((p) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(p)),
+  ].join('\n')
+  const q = `{
+    Get {
+      ${g}(
+        nearText: { concepts: ["${escaped}"] }
+        limit: ${limit}
+      ) {
+        ${fields}
+      }
+    }
+  }`
+  const res = await graphqlQuery<{
+    Get: Record<string, Record<string, unknown>[]>
+  }>(q, client)
+  if (res.errors?.length) {
+    const msg = res.errors.map((e) => e.message).join('; ')
+    throw new Error(msg)
+  }
+  const rows = res.inner?.Get?.[className] ?? []
+  return rows.map((row) => {
+    const add = row._additional as { id?: string; distance?: number; certainty?: number } | undefined
+    const { _additional, ...rest } = row
+    return {
+      id: add?.id,
+      distance: add?.distance,
+      certainty: add?.certainty,
+      properties: rest as Record<string, unknown>,
+    }
+  })
+}
