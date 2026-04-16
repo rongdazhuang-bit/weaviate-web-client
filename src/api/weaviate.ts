@@ -13,7 +13,14 @@ export interface WeaviateClass {
   vectorizer?: string
   vectorIndexType?: string
   properties?: WeaviateProperty[]
-  multiTenancyConfig?: { enabled?: boolean }
+  replicationConfig?: Record<string, unknown>
+  shardingConfig?: Record<string, unknown>
+  /** REST 字段名，见 GET /v1/schema/{className} */
+  vectorIndexConfig?: Record<string, unknown>
+  /** 个别文档/版本别称，展示时与 vectorIndexConfig 二选一 */
+  vectorConfig?: Record<string, unknown>
+  multiTenancyConfig?: Record<string, unknown>
+  invertedIndexConfig?: Record<string, unknown>
 }
 
 export interface WeaviateProperty {

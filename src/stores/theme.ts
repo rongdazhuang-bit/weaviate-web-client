@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-export type ThemeId = 'slate' | 'ocean' | 'violet' | 'forest' | 'sunset'
+export type ThemeId = 'slate' | 'ocean' | 'violet' | 'forest' | 'sunset' | 'sunshine'
 
 const STORAGE_KEY = 'wc_theme'
 
@@ -37,5 +37,5 @@ export const useThemeStore = defineStore('theme', () => {
 })
 
 function isThemeId(s: string): s is ThemeId {
-  return ['slate', 'ocean', 'violet', 'forest', 'sunset'].includes(s)
+  return ['slate', 'ocean', 'violet', 'forest', 'sunset', 'sunshine'].includes(s)
 }

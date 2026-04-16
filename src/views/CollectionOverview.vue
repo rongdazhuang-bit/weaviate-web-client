@@ -29,9 +29,88 @@
         <el-table-column label="类型" min-width="260" show-overflow-tooltip>
           <template #default="{ row }">{{ row.dataType?.join?.(', ') || row.dataType }}</template>
         </el-table-column>
-        <el-table-column prop="description" label="说明" min-width="280" show-overflow-tooltip />
       </el-table>
       <el-empty v-else description="无属性" />
+
+      <div class="config-section">
+        <h4 class="h4">副本配置</h4>
+        <el-table
+          v-if="replicationRows.length"
+          class="collection-config-table"
+          :data="replicationRows"
+          size="small"
+          border
+          stripe
+        >
+          <el-table-column prop="key" label="字段" min-width="200" width="240" show-overflow-tooltip />
+          <el-table-column prop="value" label="值" min-width="280" class-name="wc-config-value-cell" show-overflow-tooltip />
+        </el-table>
+        <el-empty v-else description="无副本配置" />
+      </div>
+
+      <div class="config-section">
+        <h4 class="h4">分片配置</h4>
+        <el-table
+          v-if="shardingRows.length"
+          class="collection-config-table"
+          :data="shardingRows"
+          size="small"
+          border
+          stripe
+        >
+          <el-table-column prop="key" label="字段" min-width="200" width="240" show-overflow-tooltip />
+          <el-table-column prop="value" label="值" min-width="280" class-name="wc-config-value-cell" show-overflow-tooltip />
+        </el-table>
+        <el-empty v-else description="无分片配置" />
+      </div>
+
+      <div class="config-section">
+        <h4 class="h4">向量配置</h4>
+        <el-table
+          v-if="vectorRows.length"
+          class="collection-config-table"
+          :data="vectorRows"
+          size="small"
+          border
+          stripe
+        >
+          <el-table-column prop="key" label="字段" min-width="200" width="240" show-overflow-tooltip />
+          <el-table-column prop="value" label="值" min-width="280" class-name="wc-config-value-cell" show-overflow-tooltip />
+        </el-table>
+        <el-empty v-else description="无向量配置" />
+      </div>
+
+      <div class="config-section">
+        <h4 class="h4">多租户配置</h4>
+        <el-table
+          v-if="multiTenancyRows.length"
+          class="collection-config-table"
+          :data="multiTenancyRows"
+          size="small"
+          border
+          stripe
+        >
+          <el-table-column prop="key" label="字段" min-width="200" width="240" show-overflow-tooltip />
+          <el-table-column prop="value" label="值" min-width="280" class-name="wc-config-value-cell" show-overflow-tooltip />
+        </el-table>
+        <el-empty v-else description="无多租户配置" />
+      </div>
+
+      <div class="config-section">
+        <h4 class="h4">倒排索引配置</h4>
+        <el-table
+          v-if="invertedRows.length"
+          class="collection-config-table"
+          :data="invertedRows"
+          size="small"
+          border
+          stripe
+        >
+          <el-table-column prop="key" label="字段" min-width="200" width="240" show-overflow-tooltip />
+          <el-table-column prop="value" label="值" min-width="280" class-name="wc-config-value-cell" show-overflow-tooltip />
+        </el-table>
+        <el-empty v-else description="无倒排索引配置" />
+      </div>
     </el-card>
   </div>
 </template>
@@ -40,6 +119,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { aggregateCount, fetchClassSchema, type WeaviateClass } from '@/api/weaviate'
+import { configObjectToRows } from '@/utils/configTable'
 
 const route = useRoute()
 const loading = ref(false)
@@ -47,6 +127,14 @@ const cls = ref<WeaviateClass | null>(null)
 const count = ref<number | null>(null)
 
 const className = computed(() => decodeURIComponent(route.params.name as string))
+
+const replicationRows = computed(() => configObjectToRows(cls.value?.replicationConfig))
+const shardingRows = computed(() => configObjectToRows(cls.value?.shardingConfig))
+const vectorRows = computed(() =>
+  configObjectToRows(cls.value?.vectorIndexConfig ?? cls.value?.vectorConfig),
+)
+const multiTenancyRows = computed(() => configObjectToRows(cls.value?.multiTenancyConfig))
+const invertedRows = computed(() => configObjectToRows(cls.value?.invertedIndexConfig))
 
 async function load() {
   loading.value = true
@@ -78,6 +166,18 @@ onMounted(() => load())
 .h4 {
   margin: 0 0 8px;
   font-size: 14px;
+}
+
+.config-section {
+  margin-top: 16px;
+}
+
+.collection-config-table :deep(.wc-config-value-cell .cell) {
+  white-space: pre-wrap;
+  font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-word;
 }
 
 /* Schema 表格：标签列固定宽度，值列占满剩余（与主题表头风格一致） */

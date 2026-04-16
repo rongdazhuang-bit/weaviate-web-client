@@ -10,8 +10,6 @@
       </div>
       <div class="topbar-right">
         <ThemePicker />
-        <el-button size="small" :icon="Refresh" @click="reloadClasses" :loading="loadingClasses">刷新集合</el-button>
-        <el-button size="small" type="primary" :icon="Search" @click="goSearch">向量检索</el-button>
         <el-tooltip content="退出登录" placement="bottom">
           <span class="logout-wrap">
             <el-button size="small" :icon="SwitchButton" circle aria-label="退出登录" @click="logout" />
@@ -26,10 +24,6 @@
         :style="{ width: `${asideWidth}px` }"
       >
         <div class="aside">
-          <div class="aside-head">
-            <div class="aside-title">导航</div>
-            <div class="aside-hint">集合 / 集群</div>
-          </div>
           <el-input
             v-model="filter"
             clearable
@@ -44,7 +38,10 @@
               class="aside-menu"
             >
               <el-menu-item index="/app/cluster">
-                <span>集群与发现</span>
+                <span>集群</span>
+              </el-menu-item>
+              <el-menu-item index="/app/search">
+                <span>检索</span>
               </el-menu-item>
               <el-sub-menu index="collections">
                 <template #title>集合</template>
@@ -91,7 +88,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useConnectionStore } from '@/stores/connection'
 import { fetchSchema, type WeaviateClass } from '@/api/weaviate'
-import { Refresh, Search, SwitchButton } from '@element-plus/icons-vue'
+import { SwitchButton } from '@element-plus/icons-vue'
 import ThemePicker from '@/components/ThemePicker.vue'
 
 const ASIDE_WIDTH_KEY = 'wc_aside_width'
@@ -104,7 +101,6 @@ const router = useRouter()
 const route = useRoute()
 
 const classes = ref<WeaviateClass[]>([])
-const loadingClasses = ref(false)
 const filter = ref('')
 const asideWidth = ref(DEFAULT_ASIDE_WIDTH)
 
@@ -169,32 +165,27 @@ const filteredClasses = computed(() => {
 
 const activeMenu = computed(() => {
   const p = route.path
+  if (p.startsWith('/app/search')) return '/app/search'
   const m = p.match(/^\/app\/collections\/([^/]+)/)
   if (m) return `/app/collections/${m[1]}`
   return p
 })
 
-/** 集合「对象」页：主区域不整体滚动，仅表格内部纵向滚动 */
-/** 集群页、集合对象页：主区域不整体滚动，由内部块滚动 */
-const mainScrollFill = computed(
-  () => route.name === 'collection-objects' || route.name === 'cluster',
-)
+/** 集群 / 检索 / 集合各子页：主区域不整体滚动，由子页内部（表格等）滚动 */
+const mainScrollFill = computed(() => {
+  const n = route.name
+  if (n === 'cluster' || n === 'search') return true
+  return typeof n === 'string' && n.startsWith('collection-')
+})
 
 async function reloadClasses() {
-  loadingClasses.value = true
   try {
     classes.value = await fetchSchema()
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '获取集合列表失败'
     ElMessage.error(msg)
     classes.value = []
-  } finally {
-    loadingClasses.value = false
   }
-}
-
-function goSearch() {
-  router.push({ name: 'search' })
 }
 
 function logout() {
@@ -304,7 +295,7 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
   background: var(--wc-sidebar);
-  color: #e2e8f0;
+  color: var(--wc-text);
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--wc-sidebar-border);
@@ -329,24 +320,8 @@ onUnmounted(() => {
   background: color-mix(in srgb, var(--wc-accent) 42%, transparent);
 }
 
-.aside-head {
-  padding: 16px 16px 8px;
-}
-
-.aside-title {
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.02em;
-}
-
-.aside-hint {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #94a3b8;
-}
-
 .filter {
-  margin: 0 12px 10px;
+  margin: 12px 12px 10px;
   width: auto;
 }
 
@@ -375,7 +350,7 @@ onUnmounted(() => {
 
 :deep(.aside-menu .el-menu-item),
 :deep(.aside-menu .el-sub-menu__title) {
-  color: #cbd5e1;
+  color: var(--wc-muted);
 }
 
 :deep(.aside-menu .el-menu-item.is-active) {

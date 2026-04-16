@@ -18,6 +18,16 @@
             <span class="muted">{{ summarize(row.properties) }}</span>
           </template>
         </el-table-column>
+        <el-table-column label="创建时间" :width="178" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ formatUnixTime(row.creationTimeUnix) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="更新时间" :width="178" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ formatUnixTime(row.lastUpdateTimeUnix) }}
+          </template>
+        </el-table-column>
       </el-table>
     </div>
     <div class="pager">
@@ -28,10 +38,12 @@
 
     <el-drawer v-model="drawer" title="对象详情" size="50%">
       <template v-if="detail">
-        <el-descriptions :column="1" border size="small">
+        <el-descriptions :column="2" border size="small">
           <el-descriptions-item label="id">{{ detail.id }}</el-descriptions-item>
           <el-descriptions-item label="class">{{ detail.class || '—' }}</el-descriptions-item>
-          <el-descriptions-item label="向量">
+          <el-descriptions-item label="创建时间">{{ formatUnixTime(detail.creationTimeUnix) }}</el-descriptions-item>
+          <el-descriptions-item label="更新时间">{{ formatUnixTime(detail.lastUpdateTimeUnix) }}</el-descriptions-item>
+          <el-descriptions-item label="向量" :span="2">
             {{ detail.vector?.length ? `存在（${detail.vector.length} 维）` : '未包含或为空' }}
           </el-descriptions-item>
         </el-descriptions>
@@ -84,6 +96,15 @@ function summarize(props: Record<string, unknown> | undefined) {
   const keys = Object.keys(props).slice(0, 3)
   const parts = keys.map((k) => `${k}: ${String(props[k]).slice(0, 80)}`)
   return parts.join('；') || '—'
+}
+
+/** Weaviate REST 返回 Unix 秒；若误传毫秒则兼容 */
+function formatUnixTime(ts: number | undefined): string {
+  if (ts == null || !Number.isFinite(ts)) return '—'
+  const sec = ts > 1e12 ? ts / 1000 : ts
+  const d = new Date(sec * 1000)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleString('zh-CN', { dateStyle: 'medium', timeStyle: 'medium' })
 }
 
 async function loadPage(after?: string) {

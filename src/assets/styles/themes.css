@@ -103,6 +103,49 @@ html[data-theme='sunset'] {
   color-scheme: dark;
 }
 
+/* 阳光：浅色主调，白/浅灰底 + 琥珀强调色（与其它深色主题区分） */
+html[data-theme='sunshine'] {
+  --wc-bg: #f5f5f4;
+  --wc-surface: #ffffff;
+  --wc-surface-elevated: #f4f4f5;
+  --wc-border: rgba(15, 23, 42, 0.1);
+  --wc-text: #0f172a;
+  --wc-muted: #64748b;
+  --wc-sidebar: #ffffff;
+  --wc-sidebar-border: rgba(15, 23, 42, 0.08);
+  --wc-topbar: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
+  --wc-accent: #ca8a04;
+  --wc-accent-2: #eab308;
+  --wc-menu-active-bg: rgba(234, 179, 8, 0.2);
+  --wc-menu-active-text: #713f12;
+  --wc-code-bg: #f1f5f9;
+  --wc-scrollbar: rgba(202, 138, 4, 0.4);
+  --wc-scrollbar-track: rgba(15, 23, 42, 0.06);
+  --wc-shadow: 0 4px 24px rgba(15, 23, 42, 0.07);
+  color-scheme: light;
+}
+
+html[data-theme='sunshine'] .topbar {
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme='sunshine'] .login-bg {
+  background:
+    radial-gradient(1200px 600px at 20% 0%, rgba(234, 179, 8, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 20%, rgba(251, 191, 36, 0.14), transparent 50%),
+    linear-gradient(165deg, #fafaf9 0%, #ffffff 50%, #f5f5f4 100%);
+}
+
+html[data-theme='sunshine'] .login-card {
+  border-color: rgba(15, 23, 42, 0.1) !important;
+  background: #ffffff !important;
+}
+
+/* 浅色下 MessageBox 遮罩：避免与深色主题共用「底色叠黑」过重 */
+html[data-theme='sunshine'] .el-overlay-message-box {
+  background-color: rgba(15, 23, 42, 0.35) !important;
+}
+
 /**
  * Element Plus 全局主色链：与当前主题的 --wc-accent 对齐。
  * 影响 type="primary" 按钮、文字按钮、链接、默认按钮的 hover 强调色、输入框 focus 等。
@@ -121,6 +164,52 @@ html[data-theme] {
     var(--wc-accent) 14%,
     var(--wc-surface-elevated)
   );
+
+  /* 全局填充/边框/文字：与 --wc-* 一致，供 input-number 步进、部分控件使用 EP 默认 --el-fill-color-light 时的底色 */
+  --el-fill-color-blank: var(--wc-surface);
+  --el-fill-color-light: color-mix(in srgb, var(--wc-accent) 12%, var(--wc-surface));
+  --el-fill-color-lighter: color-mix(in srgb, var(--wc-surface) 88%, var(--wc-text) 7%);
+  --el-fill-color-extra-light: color-mix(in srgb, var(--wc-surface) 93%, var(--wc-text) 4%);
+  --el-border-color: var(--wc-border);
+  --el-border-color-light: color-mix(in srgb, var(--wc-border) 85%, transparent);
+  --el-border-color-lighter: color-mix(in srgb, var(--wc-border) 65%, transparent);
+  --el-border-color-extra-light: color-mix(in srgb, var(--wc-border) 45%, transparent);
+  --el-text-color-regular: var(--wc-text);
+  --el-text-color-primary: var(--wc-text);
+  --el-text-color-secondary: var(--wc-muted);
+  --el-text-color-placeholder: var(--wc-muted);
+  --el-text-color-disabled: var(--wc-muted);
+  --el-disabled-text-color: var(--wc-muted);
+  --el-disabled-bg-color: color-mix(in srgb, var(--wc-surface-elevated) 55%, transparent);
+  --el-disabled-border-color: var(--wc-border);
+  --el-bg-color: var(--wc-surface);
+  --el-bg-color-page: var(--wc-bg);
+  --el-bg-color-overlay: var(--wc-surface-elevated);
+
+  /* Checkbox：未选中方块底/边与主题一致（EP 默认近白） */
+  --el-checkbox-bg-color: var(--wc-surface-elevated);
+  --el-checkbox-input-border: 1px solid var(--wc-border);
+  --el-checkbox-input-border-color-hover: var(--wc-accent);
+  --el-checkbox-text-color: var(--wc-text);
+  --el-checkbox-checked-bg-color: var(--wc-accent);
+  --el-checkbox-checked-input-border-color: var(--wc-accent);
+  --el-checkbox-checked-icon-color: #ffffff;
+  --el-checkbox-checked-text-color: var(--wc-accent);
+  --el-checkbox-disabled-icon-color: var(--wc-muted);
+  --el-checkbox-disabled-input-fill: color-mix(in srgb, var(--wc-surface-elevated) 65%, var(--wc-border));
+  --el-checkbox-disabled-border-color: var(--wc-border);
+  --el-checkbox-disabled-checked-input-fill: color-mix(in srgb, var(--wc-muted) 35%, var(--wc-surface-elevated));
+  --el-checkbox-disabled-checked-input-border-color: var(--wc-border);
+  --el-checkbox-disabled-checked-icon-color: var(--wc-muted);
+
+  /* Radio */
+  --el-radio-input-bg-color: var(--wc-surface-elevated);
+  --el-radio-input-border: 1px solid var(--wc-border);
+  --el-radio-input-border-color-hover: var(--wc-accent);
+  --el-radio-text-color: var(--wc-text);
+
+  /* Switch：开启色与主色一致 */
+  --el-switch-on-color: var(--wc-accent);
 }
 
 /* v-loading 遮罩：EP 使用 --el-mask-color 偏浅，深色主题下改为透明，仅保留转圈 */
@@ -305,9 +394,14 @@ html[data-theme] .cell-json {
 }
 
 /*
- * 默认按钮：默认态以主题强调色为主（边线/文字），悬停时背景与边框加深
+ * 默认按钮：以当前主题强调色为底/边/字色。
+ * Element Plus 在未写 type 时不会生成 .el-button--default，需用 :not() 一并命中。
  */
-html[data-theme] .el-button--default {
+html[data-theme] .el-button--default,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(.is-link) {
   --el-button-bg-color: color-mix(in srgb, var(--wc-accent) 14%, var(--wc-surface));
   --el-button-border-color: color-mix(in srgb, var(--wc-accent) 65%, var(--wc-border));
   --el-button-text-color: var(--wc-accent);
@@ -324,21 +418,47 @@ html[data-theme] .el-button--default {
 
 html[data-theme] .el-button--default:not(.is-disabled):hover,
 html[data-theme] .el-button--default:not(.is-disabled):focus-visible,
-html[data-theme] .el-button--default:not(.is-disabled):active {
+html[data-theme] .el-button--default:not(.is-disabled):active,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(
+    .is-link
+  ):not(.is-disabled):hover,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(
+    .is-link
+  ):not(.is-disabled):focus-visible,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(
+    .is-link
+  ):not(.is-disabled):active {
   background-color: var(--el-button-hover-bg-color) !important;
   border-color: var(--el-button-hover-border-color) !important;
   color: var(--el-button-hover-text-color) !important;
 }
 
 html[data-theme] .el-button--default.is-disabled,
-html[data-theme] .el-button--default.is-disabled:hover {
+html[data-theme] .el-button--default.is-disabled:hover,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(.is-link).is-disabled,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(.is-link).is-disabled:hover {
   background-color: var(--el-button-disabled-bg-color) !important;
   border-color: var(--el-button-disabled-border-color) !important;
   color: var(--el-button-disabled-text-color) !important;
 }
 
 /* 概览 Schema 卡片「刷新」：与 el-table 行底色一致，弱于全局 default 的强调色 */
-html[data-theme] .main-scroll .wc-overview-refresh.el-button--default {
+html[data-theme] .main-scroll .wc-overview-refresh.el-button {
   --el-button-bg-color: var(--wc-surface);
   --el-button-border-color: var(--wc-border);
   --el-button-text-color: var(--wc-text);
@@ -350,9 +470,9 @@ html[data-theme] .main-scroll .wc-overview-refresh.el-button--default {
   border-color: var(--el-button-border-color) !important;
 }
 
-html[data-theme] .main-scroll .wc-overview-refresh.el-button--default:not(.is-disabled):hover,
-html[data-theme] .main-scroll .wc-overview-refresh.el-button--default:not(.is-disabled):focus-visible,
-html[data-theme] .main-scroll .wc-overview-refresh.el-button--default:not(.is-disabled):active {
+html[data-theme] .main-scroll .wc-overview-refresh.el-button:not(.is-disabled):hover,
+html[data-theme] .main-scroll .wc-overview-refresh.el-button:not(.is-disabled):focus-visible,
+html[data-theme] .main-scroll .wc-overview-refresh.el-button:not(.is-disabled):active {
   background-color: var(--el-button-hover-bg-color) !important;
   border-color: var(--el-button-hover-border-color) !important;
   color: var(--el-button-hover-text-color) !important;
@@ -440,8 +560,21 @@ html[data-theme] .main-scroll .el-input-number .el-input__inner {
   color: var(--wc-text);
 }
 
-html[data-theme] .main-scroll .el-checkbox {
-  --el-checkbox-text-color: var(--wc-text);
+/* input-number 步进按钮：显式与主题底/字色一致（部分环境下仍残留 EP 浅灰底） */
+html[data-theme] .el-input-number__decrease,
+html[data-theme] .el-input-number__increase {
+  background-color: var(--el-fill-color-light) !important;
+  color: var(--wc-text) !important;
+}
+
+html[data-theme] .el-input-number__decrease:hover,
+html[data-theme] .el-input-number__increase:hover {
+  color: var(--wc-accent) !important;
+}
+
+html[data-theme] .el-input-number.is-disabled .el-input-number__decrease,
+html[data-theme] .el-input-number.is-disabled .el-input-number__increase {
+  color: var(--wc-muted) !important;
 }
 
 /* 文件夹页警告条：避免浅色大块与深色主调割裂 */
@@ -543,4 +676,48 @@ html[data-theme] .main-scroll .collection-tabs .el-tabs__item.is-active {
 }
 html[data-theme] .main-scroll .collection-tabs .el-tabs__active-bar {
   background-color: var(--wc-accent);
+}
+
+/*
+ * 登录页：输入框固定为 Element Plus 默认浅色（白底、灰边、#409eff 聚焦），
+ * 不随 html[data-theme] 的全局主题色 / --wc-* 变化。
+ */
+html[data-theme] .login-wrap {
+  --el-fill-color-blank: #ffffff;
+  --el-fill-color-light: #f5f7fa;
+  --el-text-color-regular: #606266;
+  --el-text-color-primary: #303133;
+  --el-text-color-placeholder: #a8abb2;
+  --el-input-bg-color: #ffffff;
+  --el-input-border-color: #dcdfe6;
+  --el-input-hover-border-color: #c0c4cc;
+  --el-input-focus-border-color: #409eff;
+  --el-input-text-color: #606266;
+}
+
+html[data-theme] .login-wrap .el-input__wrapper {
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+html[data-theme] .login-wrap .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px #c0c4cc inset !important;
+}
+
+html[data-theme] .login-wrap .el-input.is-focus .el-input__wrapper,
+html[data-theme] .login-wrap .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px #409eff inset !important;
+}
+
+html[data-theme] .login-wrap .el-input__inner {
+  color: #606266 !important;
+}
+
+html[data-theme] .login-wrap .el-input__inner::placeholder {
+  color: #a8abb2 !important;
+}
+
+html[data-theme] .login-wrap .el-input .el-input__suffix,
+html[data-theme] .login-wrap .el-input .el-input__prefix {
+  color: #a8abb2;
 }

@@ -1,9 +1,6 @@
 <template>
   <div class="page" v-loading="loading">
     <el-card shadow="never">
-      <template #header>
-        <span>虚拟文件夹（按路径字段聚合）</span>
-      </template>
       <el-form inline size="small" class="form">
         <el-form-item label="路径字段">
           <el-select v-model="pathField" placeholder="选择属性" style="width: 220px" filterable>
@@ -11,7 +8,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="buildTree" :loading="scanning">扫描并生成树</el-button>
+          <el-button @click="buildTree" :loading="scanning">扫描并生成树</el-button>
         </el-form-item>
       </el-form>
       <el-tree v-if="treeData.length" :data="treeData" :props="treeProps" default-expand-all />

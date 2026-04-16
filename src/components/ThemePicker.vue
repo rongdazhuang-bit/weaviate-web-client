@@ -33,6 +33,7 @@ import {
   MagicStick,
   Cherry,
   Sunset,
+  Sunny,
 } from '@element-plus/icons-vue'
 import { useThemeStore, type ThemeId } from '@/stores/theme'
 
@@ -49,10 +50,11 @@ const items: {
   { id: 'violet', label: '紫幕', icon: MagicStick, dot: '#c4b5fd' },
   { id: 'forest', label: '森绿', icon: Cherry, dot: '#4ade80' },
   { id: 'sunset', label: '暮金', icon: Sunset, dot: '#fbbf24' },
+  { id: 'sunshine', label: '阳光', icon: Sunny, dot: '#ca8a04' },
 ]
 
 function onCommand(id: string) {
-  if (['slate', 'ocean', 'violet', 'forest', 'sunset'].includes(id)) {
+  if (['slate', 'ocean', 'violet', 'forest', 'sunset', 'sunshine'].includes(id)) {
     theme.setTheme(id as ThemeId)
   }
 }
