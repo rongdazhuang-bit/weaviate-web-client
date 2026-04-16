@@ -1,0 +1,723 @@
+/**
+ * 主题：与侧栏一致的深色主调，通过 html[data-theme] 切换。
+ * 变量命名：wc = weaviate client
+ */
+
+html[data-theme='slate'] {
+  --wc-bg: #0f1419;
+  --wc-surface: #151c27;
+  --wc-surface-elevated: #1a2332;
+  --wc-border: rgba(148, 163, 184, 0.16);
+  --wc-text: #e8eef7;
+  --wc-muted: #94a3b8;
+  --wc-sidebar: #0a0e14;
+  --wc-sidebar-border: rgba(148, 163, 184, 0.14);
+  --wc-topbar: linear-gradient(180deg, #0c1118 0%, #0a0e14 100%);
+  --wc-accent: #38bdf8;
+  --wc-accent-2: #818cf8;
+  --wc-menu-active-bg: rgba(56, 189, 248, 0.12);
+  --wc-menu-active-text: #e0f2fe;
+  --wc-code-bg: #070b10;
+  --wc-scrollbar: rgba(56, 189, 248, 0.35);
+  --wc-scrollbar-track: rgba(15, 23, 42, 0.45);
+  color-scheme: dark;
+}
+
+html[data-theme='ocean'] {
+  --wc-bg: #0a1218;
+  --wc-surface: #0f1e28;
+  --wc-surface-elevated: #132a36;
+  --wc-border: rgba(34, 211, 238, 0.14);
+  --wc-text: #e6f7fb;
+  --wc-muted: #7dd3e8;
+  --wc-sidebar: #071016;
+  --wc-sidebar-border: rgba(34, 211, 238, 0.12);
+  --wc-topbar: linear-gradient(180deg, #08141c 0%, #061018 100%);
+  --wc-accent: #22d3ee;
+  --wc-accent-2: #06b6d4;
+  --wc-menu-active-bg: rgba(34, 211, 238, 0.12);
+  --wc-menu-active-text: #cffafe;
+  --wc-code-bg: #040a0e;
+  --wc-scrollbar: rgba(34, 211, 238, 0.35);
+  --wc-scrollbar-track: rgba(7, 24, 32, 0.5);
+  color-scheme: dark;
+}
+
+html[data-theme='violet'] {
+  --wc-bg: #120c18;
+  --wc-surface: #1a1224;
+  --wc-surface-elevated: #221830;
+  --wc-border: rgba(167, 139, 250, 0.18);
+  --wc-text: #f3e8ff;
+  --wc-muted: #c4b5fd;
+  --wc-sidebar: #0c0812;
+  --wc-sidebar-border: rgba(167, 139, 250, 0.14);
+  --wc-topbar: linear-gradient(180deg, #100818 0%, #0c0812 100%);
+  --wc-accent: #a78bfa;
+  --wc-accent-2: #e879f9;
+  --wc-menu-active-bg: rgba(167, 139, 250, 0.14);
+  --wc-menu-active-text: #faf5ff;
+  --wc-code-bg: #0a0610;
+  --wc-scrollbar: rgba(167, 139, 250, 0.35);
+  --wc-scrollbar-track: rgba(18, 12, 24, 0.55);
+  color-scheme: dark;
+}
+
+html[data-theme='forest'] {
+  --wc-bg: #0c120f;
+  --wc-surface: #121f18;
+  --wc-surface-elevated: #16261d;
+  --wc-border: rgba(74, 222, 128, 0.14);
+  --wc-text: #ecfdf3;
+  --wc-muted: #86efac;
+  --wc-sidebar: #080d0a;
+  --wc-sidebar-border: rgba(74, 222, 128, 0.12);
+  --wc-topbar: linear-gradient(180deg, #0a100c 0%, #080d0a 100%);
+  --wc-accent: #4ade80;
+  --wc-accent-2: #34d399;
+  --wc-menu-active-bg: rgba(74, 222, 128, 0.12);
+  --wc-menu-active-text: #dcfce7;
+  --wc-code-bg: #050807;
+  --wc-scrollbar: rgba(74, 222, 128, 0.32);
+  --wc-scrollbar-track: rgba(8, 20, 14, 0.5);
+  color-scheme: dark;
+}
+
+html[data-theme='sunset'] {
+  --wc-bg: #141008;
+  --wc-surface: #1f180c;
+  --wc-surface-elevated: #2a2010;
+  --wc-border: rgba(251, 191, 36, 0.16);
+  --wc-text: #fffbeb;
+  --wc-muted: #fcd34d;
+  --wc-sidebar: #0e0a06;
+  --wc-sidebar-border: rgba(251, 191, 36, 0.12);
+  --wc-topbar: linear-gradient(180deg, #120e08 0%, #0e0a06 100%);
+  --wc-accent: #fbbf24;
+  --wc-accent-2: #f97316;
+  --wc-menu-active-bg: rgba(251, 191, 36, 0.12);
+  --wc-menu-active-text: #fffbeb;
+  --wc-code-bg: #0a0804;
+  --wc-scrollbar: rgba(251, 191, 36, 0.32);
+  --wc-scrollbar-track: rgba(30, 22, 10, 0.55);
+  color-scheme: dark;
+}
+
+/* 阳光：浅色主调，白/浅灰底 + 琥珀强调色（与其它深色主题区分） */
+html[data-theme='sunshine'] {
+  --wc-bg: #f5f5f4;
+  --wc-surface: #ffffff;
+  --wc-surface-elevated: #f4f4f5;
+  --wc-border: rgba(15, 23, 42, 0.1);
+  --wc-text: #0f172a;
+  --wc-muted: #64748b;
+  --wc-sidebar: #ffffff;
+  --wc-sidebar-border: rgba(15, 23, 42, 0.08);
+  --wc-topbar: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
+  --wc-accent: #ca8a04;
+  --wc-accent-2: #eab308;
+  --wc-menu-active-bg: rgba(234, 179, 8, 0.2);
+  --wc-menu-active-text: #713f12;
+  --wc-code-bg: #f1f5f9;
+  --wc-scrollbar: rgba(202, 138, 4, 0.4);
+  --wc-scrollbar-track: rgba(15, 23, 42, 0.06);
+  --wc-shadow: 0 4px 24px rgba(15, 23, 42, 0.07);
+  color-scheme: light;
+}
+
+html[data-theme='sunshine'] .topbar {
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme='sunshine'] .login-bg {
+  background:
+    radial-gradient(1200px 600px at 20% 0%, rgba(234, 179, 8, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 20%, rgba(251, 191, 36, 0.14), transparent 50%),
+    linear-gradient(165deg, #fafaf9 0%, #ffffff 50%, #f5f5f4 100%);
+}
+
+html[data-theme='sunshine'] .login-card {
+  border-color: rgba(15, 23, 42, 0.1) !important;
+  background: #ffffff !important;
+}
+
+/* 浅色下 MessageBox 遮罩：避免与深色主题共用「底色叠黑」过重 */
+html[data-theme='sunshine'] .el-overlay-message-box {
+  background-color: rgba(15, 23, 42, 0.35) !important;
+}
+
+/**
+ * Element Plus 全局主色链：与当前主题的 --wc-accent 对齐。
+ * 影响 type="primary" 按钮、文字按钮、链接、默认按钮的 hover 强调色、输入框 focus 等。
+ */
+html[data-theme] {
+  --el-color-primary: var(--wc-accent);
+  --el-color-primary-light-3: color-mix(in srgb, var(--wc-accent) 78%, #fff);
+  --el-color-primary-light-5: color-mix(in srgb, var(--wc-accent) 62%, #fff);
+  --el-color-primary-light-7: color-mix(in srgb, var(--wc-accent) 48%, #fff);
+  --el-color-primary-light-8: color-mix(in srgb, var(--wc-accent) 38%, #fff);
+  --el-color-primary-light-9: color-mix(in srgb, var(--wc-accent) 26%, var(--wc-surface));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--wc-accent) 78%, #000);
+  /* border 模式 descriptions 左侧标签列：EP 默认用浅色 fill，改为与深色主调一致 */
+  --el-descriptions-item-bordered-label-background: color-mix(
+    in srgb,
+    var(--wc-accent) 14%,
+    var(--wc-surface-elevated)
+  );
+
+  /* 全局填充/边框/文字：与 --wc-* 一致，供 input-number 步进、部分控件使用 EP 默认 --el-fill-color-light 时的底色 */
+  --el-fill-color-blank: var(--wc-surface);
+  --el-fill-color-light: color-mix(in srgb, var(--wc-accent) 12%, var(--wc-surface));
+  --el-fill-color-lighter: color-mix(in srgb, var(--wc-surface) 88%, var(--wc-text) 7%);
+  --el-fill-color-extra-light: color-mix(in srgb, var(--wc-surface) 93%, var(--wc-text) 4%);
+  --el-border-color: var(--wc-border);
+  --el-border-color-light: color-mix(in srgb, var(--wc-border) 85%, transparent);
+  --el-border-color-lighter: color-mix(in srgb, var(--wc-border) 65%, transparent);
+  --el-border-color-extra-light: color-mix(in srgb, var(--wc-border) 45%, transparent);
+  --el-text-color-regular: var(--wc-text);
+  --el-text-color-primary: var(--wc-text);
+  --el-text-color-secondary: var(--wc-muted);
+  --el-text-color-placeholder: var(--wc-muted);
+  --el-text-color-disabled: var(--wc-muted);
+  --el-disabled-text-color: var(--wc-muted);
+  --el-disabled-bg-color: color-mix(in srgb, var(--wc-surface-elevated) 55%, transparent);
+  --el-disabled-border-color: var(--wc-border);
+  --el-bg-color: var(--wc-surface);
+  --el-bg-color-page: var(--wc-bg);
+  --el-bg-color-overlay: var(--wc-surface-elevated);
+
+  /* Checkbox：未选中方块底/边与主题一致（EP 默认近白） */
+  --el-checkbox-bg-color: var(--wc-surface-elevated);
+  --el-checkbox-input-border: 1px solid var(--wc-border);
+  --el-checkbox-input-border-color-hover: var(--wc-accent);
+  --el-checkbox-text-color: var(--wc-text);
+  --el-checkbox-checked-bg-color: var(--wc-accent);
+  --el-checkbox-checked-input-border-color: var(--wc-accent);
+  --el-checkbox-checked-icon-color: #ffffff;
+  --el-checkbox-checked-text-color: var(--wc-accent);
+  --el-checkbox-disabled-icon-color: var(--wc-muted);
+  --el-checkbox-disabled-input-fill: color-mix(in srgb, var(--wc-surface-elevated) 65%, var(--wc-border));
+  --el-checkbox-disabled-border-color: var(--wc-border);
+  --el-checkbox-disabled-checked-input-fill: color-mix(in srgb, var(--wc-muted) 35%, var(--wc-surface-elevated));
+  --el-checkbox-disabled-checked-input-border-color: var(--wc-border);
+  --el-checkbox-disabled-checked-icon-color: var(--wc-muted);
+
+  /* Radio */
+  --el-radio-input-bg-color: var(--wc-surface-elevated);
+  --el-radio-input-border: 1px solid var(--wc-border);
+  --el-radio-input-border-color-hover: var(--wc-accent);
+  --el-radio-text-color: var(--wc-text);
+
+  /* Switch：开启色与主色一致 */
+  --el-switch-on-color: var(--wc-accent);
+}
+
+/* v-loading 遮罩：EP 使用 --el-mask-color 偏浅，深色主题下改为透明，仅保留转圈 */
+html[data-theme] .el-loading-mask {
+  background-color: transparent !important;
+}
+
+/* 主窗口内 Element Plus 组件与侧栏同调（表格在全应用内统一，含抽屉等） */
+html[data-theme] .main-scroll .el-card {
+  --el-card-bg-color: var(--wc-surface);
+  background-color: var(--wc-surface) !important;
+  border-color: var(--wc-border) !important;
+  color: var(--wc-text);
+}
+
+html[data-theme] .main-scroll .el-card__header {
+  border-color: var(--wc-border) !important;
+  color: var(--wc-text);
+}
+
+html[data-theme] .el-table {
+  --el-table-bg-color: var(--wc-surface);
+  --el-table-tr-bg-color: var(--wc-surface);
+  --el-table-header-bg-color: var(--wc-surface-elevated);
+  --el-table-border-color: var(--wc-border);
+  --el-table-text-color: var(--wc-text);
+  --el-table-header-text-color: var(--wc-muted);
+  --el-table-row-hover-bg-color: color-mix(in srgb, var(--wc-accent) 14%, var(--wc-surface));
+  --el-table-current-row-bg-color: color-mix(in srgb, var(--wc-accent) 22%, var(--wc-surface));
+  --el-table-expanded-cell-bg-color: var(--wc-surface);
+  /* 斑马纹行使用 --el-fill-color-lighter，须覆盖 EP 默认浅色 */
+  --el-fill-color-blank: var(--wc-surface);
+  --el-fill-color-light: color-mix(in srgb, var(--wc-accent) 12%, var(--wc-surface));
+  --el-fill-color-lighter: color-mix(in srgb, var(--wc-surface) 88%, var(--wc-text) 7%);
+  color: var(--wc-text);
+}
+
+/* 固定列右侧补片：EP 写死 #fff */
+html[data-theme] .el-table .el-table__fixed-right-patch {
+  background: var(--wc-surface) !important;
+}
+
+/* 列筛选面板（若打开） */
+html[data-theme] .el-table-filter {
+  background-color: var(--wc-surface) !important;
+  border-color: var(--wc-border) !important;
+  box-shadow: var(--wc-shadow) !important;
+}
+
+html[data-theme] .el-table-filter__bottom {
+  border-color: var(--wc-border) !important;
+}
+
+/**
+ * el-descriptions：EP 在 .el-descriptions__body 上使用 background-color: var(--el-fill-color-blank)，
+ * 且 border 模式的 is-bordered 加在 table 上而非根节点，原先 .el-descriptions.is-bordered 无法命中。
+ * 在根组件上设置变量并直接覆盖 body 背景，避免大块白底。
+ */
+html[data-theme] .main-scroll .el-descriptions,
+html[data-theme] .el-drawer .el-descriptions {
+  --el-fill-color-blank: var(--wc-surface);
+  --el-text-color-regular: var(--wc-text);
+  --el-text-color-primary: var(--wc-text);
+}
+
+html[data-theme] .main-scroll .el-descriptions__body,
+html[data-theme] .el-drawer .el-descriptions__body {
+  background-color: var(--wc-surface) !important;
+}
+
+html[data-theme] .main-scroll .el-descriptions__body .el-descriptions__table,
+html[data-theme] .el-drawer .el-descriptions__body .el-descriptions__table {
+  background: var(--wc-surface);
+}
+
+html[data-theme] .main-scroll .el-descriptions__body .el-descriptions__table tbody tr,
+html[data-theme] .el-drawer .el-descriptions__body .el-descriptions__table tbody tr {
+  background: var(--wc-surface);
+}
+
+html[data-theme] .main-scroll .el-descriptions__label,
+html[data-theme] .main-scroll .el-descriptions__content,
+html[data-theme] .el-drawer .el-descriptions__label,
+html[data-theme] .el-drawer .el-descriptions__content {
+  color: var(--wc-text);
+  border-color: var(--wc-border) !important;
+}
+
+/*
+ * 标签列：EP 使用 background: var(--el-descriptions-item-bordered-label-background)，
+ * 该变量依赖 color-mix，在部分环境下整段声明失效后会回退成白底；与值列一致改用 --wc-surface。
+ */
+html[data-theme] .main-scroll .el-descriptions__label.el-descriptions__cell.is-bordered-label,
+html[data-theme] .el-drawer .el-descriptions__label.el-descriptions__cell.is-bordered-label,
+html[data-theme] .main-scroll .el-descriptions__body .el-descriptions__table td.is-bordered-label,
+html[data-theme] .el-drawer .el-descriptions__body .el-descriptions__table td.is-bordered-label,
+html[data-theme] .main-scroll .el-descriptions__body .el-descriptions__table th.is-bordered-label,
+html[data-theme] .el-drawer .el-descriptions__body .el-descriptions__table th.is-bordered-label {
+  background-color: var(--wc-surface) !important;
+  background: var(--wc-surface) !important;
+  color: var(--wc-muted) !important;
+}
+
+html[data-theme] .main-scroll .el-descriptions__content.el-descriptions__cell.is-bordered-content,
+html[data-theme] .el-drawer .el-descriptions__content.el-descriptions__cell.is-bordered-content,
+html[data-theme] .main-scroll .el-descriptions__body .el-descriptions__table td.is-bordered-content,
+html[data-theme] .el-drawer .el-descriptions__body .el-descriptions__table td.is-bordered-content {
+  background-color: var(--wc-surface) !important;
+  background: var(--wc-surface) !important;
+  color: var(--wc-text) !important;
+}
+
+/* bordered：horizontal 为 td；vertical 首行可能为 th */
+html[data-theme] .main-scroll .el-descriptions__body .el-descriptions__table.is-bordered tbody tr td:nth-child(1),
+html[data-theme] .el-drawer .el-descriptions__body .el-descriptions__table.is-bordered tbody tr td:nth-child(1),
+html[data-theme] .main-scroll .el-descriptions__body .el-descriptions__table.is-bordered tbody tr th:nth-child(1),
+html[data-theme] .el-drawer .el-descriptions__body .el-descriptions__table.is-bordered tbody tr th:nth-child(1) {
+  background-color: var(--wc-surface) !important;
+  background: var(--wc-surface) !important;
+  color: var(--wc-muted) !important;
+  border-color: var(--wc-border) !important;
+}
+
+html[data-theme] .main-scroll .el-descriptions__body .el-descriptions__table.is-bordered tbody tr td:nth-child(2),
+html[data-theme] .el-drawer .el-descriptions__body .el-descriptions__table.is-bordered tbody tr td:nth-child(2) {
+  background-color: var(--wc-surface) !important;
+  background: var(--wc-surface) !important;
+  color: var(--wc-text) !important;
+  border-color: var(--wc-border) !important;
+}
+
+html[data-theme] .main-scroll .el-divider {
+  border-color: var(--wc-border);
+}
+
+html[data-theme] .main-scroll .el-page-header__title,
+html[data-theme] .main-scroll .el-page-header__content {
+  color: var(--wc-text);
+}
+
+html[data-theme] .main-scroll .el-form-item__label {
+  color: var(--wc-muted);
+}
+
+html[data-theme] .main-scroll .el-input__wrapper {
+  background: var(--wc-surface-elevated);
+  box-shadow: 0 0 0 1px var(--wc-border) inset;
+}
+
+html[data-theme] .main-scroll .el-input__inner {
+  color: var(--wc-text);
+}
+
+html[data-theme] .main-scroll .el-textarea__inner {
+  background: var(--wc-surface-elevated);
+  color: var(--wc-text);
+  box-shadow: 0 0 0 1px var(--wc-border) inset;
+}
+
+html[data-theme] .page .title {
+  color: var(--wc-text);
+}
+
+/* 登录后主内容区通栏占满（不再限制 1280px 居中） */
+html[data-theme] .main-scroll .page {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
+html[data-theme] .muted {
+  color: var(--wc-muted) !important;
+}
+
+html[data-theme] .json,
+html[data-theme] .cell-json {
+  background: var(--wc-code-bg) !important;
+  color: var(--wc-text) !important;
+  border: 1px solid var(--wc-border);
+}
+
+/*
+ * 默认按钮：以当前主题强调色为底/边/字色。
+ * Element Plus 在未写 type 时不会生成 .el-button--default，需用 :not() 一并命中。
+ */
+html[data-theme] .el-button--default,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(.is-link) {
+  --el-button-bg-color: color-mix(in srgb, var(--wc-accent) 14%, var(--wc-surface));
+  --el-button-border-color: color-mix(in srgb, var(--wc-accent) 65%, var(--wc-border));
+  --el-button-text-color: var(--wc-accent);
+  --el-button-hover-bg-color: color-mix(in srgb, var(--wc-accent) 38%, var(--wc-surface));
+  --el-button-hover-border-color: var(--wc-accent);
+  --el-button-hover-text-color: var(--wc-text);
+  --el-button-disabled-bg-color: color-mix(in srgb, var(--wc-surface-elevated) 48%, transparent);
+  --el-button-disabled-border-color: var(--wc-border);
+  --el-button-disabled-text-color: var(--wc-muted);
+  background-color: var(--el-button-bg-color) !important;
+  color: var(--el-button-text-color) !important;
+  border-color: var(--el-button-border-color) !important;
+}
+
+html[data-theme] .el-button--default:not(.is-disabled):hover,
+html[data-theme] .el-button--default:not(.is-disabled):focus-visible,
+html[data-theme] .el-button--default:not(.is-disabled):active,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(
+    .is-link
+  ):not(.is-disabled):hover,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(
+    .is-link
+  ):not(.is-disabled):focus-visible,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(
+    .is-link
+  ):not(.is-disabled):active {
+  background-color: var(--el-button-hover-bg-color) !important;
+  border-color: var(--el-button-hover-border-color) !important;
+  color: var(--el-button-hover-text-color) !important;
+}
+
+html[data-theme] .el-button--default.is-disabled,
+html[data-theme] .el-button--default.is-disabled:hover,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(.is-link).is-disabled,
+html[data-theme]
+  .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(
+    .el-button--danger
+  ):not(.el-button--info):not(.el-button--text):not(.el-button--link):not(.is-text):not(.is-link).is-disabled:hover {
+  background-color: var(--el-button-disabled-bg-color) !important;
+  border-color: var(--el-button-disabled-border-color) !important;
+  color: var(--el-button-disabled-text-color) !important;
+}
+
+/* 概览 Schema 卡片「刷新」：与 el-table 行底色一致，弱于全局 default 的强调色 */
+html[data-theme] .main-scroll .wc-overview-refresh.el-button {
+  --el-button-bg-color: var(--wc-surface);
+  --el-button-border-color: var(--wc-border);
+  --el-button-text-color: var(--wc-text);
+  --el-button-hover-bg-color: color-mix(in srgb, var(--wc-accent) 12%, var(--wc-surface));
+  --el-button-hover-border-color: var(--wc-border);
+  --el-button-hover-text-color: var(--wc-text);
+  background-color: var(--el-button-bg-color) !important;
+  color: var(--el-button-text-color) !important;
+  border-color: var(--el-button-border-color) !important;
+}
+
+html[data-theme] .main-scroll .wc-overview-refresh.el-button:not(.is-disabled):hover,
+html[data-theme] .main-scroll .wc-overview-refresh.el-button:not(.is-disabled):focus-visible,
+html[data-theme] .main-scroll .wc-overview-refresh.el-button:not(.is-disabled):active {
+  background-color: var(--el-button-hover-bg-color) !important;
+  border-color: var(--el-button-hover-border-color) !important;
+  color: var(--el-button-hover-text-color) !important;
+}
+
+/* 按钮组中间分隔线（子导航等） */
+html[data-theme] .el-button-group {
+  --el-button-divide-border-color: color-mix(in srgb, var(--wc-border) 75%, var(--wc-accent) 8%);
+}
+
+/* 卡片内标签（对象数等），避免浅色 info/warning 块 */
+html[data-theme] .main-scroll .el-tag--info {
+  --el-tag-bg-color: color-mix(in srgb, var(--wc-accent) 18%, var(--wc-surface));
+  --el-tag-border-color: color-mix(in srgb, var(--wc-accent) 42%, var(--wc-border));
+  --el-tag-text-color: var(--wc-text);
+}
+
+html[data-theme] .main-scroll .el-tag--warning {
+  --el-tag-bg-color: color-mix(in srgb, #d97706 26%, var(--wc-surface));
+  --el-tag-border-color: var(--wc-border);
+  --el-tag-text-color: var(--wc-text);
+}
+
+/* 文件夹页：树 */
+html[data-theme] .main-scroll .el-tree {
+  --el-fill-color-blank: var(--wc-surface);
+  --el-fill-color-light: color-mix(in srgb, var(--wc-accent) 12%, var(--wc-surface));
+  --el-tree-text-color: var(--wc-text);
+  --el-tree-node-hover-bg-color: color-mix(in srgb, var(--wc-accent) 12%, var(--wc-surface));
+  background: var(--wc-surface);
+  color: var(--wc-text);
+}
+
+html[data-theme] .main-scroll .el-tree__empty-text {
+  color: var(--wc-muted);
+}
+
+/* 对象详情抽屉：挂载在 body，不在 .main-scroll 内 */
+html[data-theme] .el-drawer {
+  --el-dialog-bg-color: var(--wc-surface);
+  --el-drawer-bg-color: var(--wc-surface);
+  color: var(--wc-text);
+}
+
+html[data-theme] .el-drawer__header {
+  color: var(--wc-text);
+  border-bottom: 1px solid var(--wc-border);
+}
+
+html[data-theme] .el-drawer__body {
+  color: var(--wc-text);
+}
+
+html[data-theme] .el-drawer .el-input__wrapper {
+  background: var(--wc-surface-elevated);
+  box-shadow: 0 0 0 1px var(--wc-border) inset;
+}
+
+html[data-theme] .el-drawer .el-input__inner {
+  color: var(--wc-text);
+}
+
+/* 主内容区下拉选择 */
+html[data-theme] .main-scroll .el-select__wrapper {
+  background: var(--wc-surface-elevated);
+  box-shadow: 0 0 0 1px var(--wc-border) inset;
+}
+
+html[data-theme] .main-scroll .el-select__placeholder,
+html[data-theme] .main-scroll .el-select__selected-item {
+  color: var(--wc-text);
+}
+
+html[data-theme] .main-scroll .el-select__caret {
+  color: var(--wc-muted);
+}
+
+/* 数字输入框 */
+html[data-theme] .main-scroll .el-input-number .el-input__wrapper {
+  background: var(--wc-surface-elevated);
+  box-shadow: 0 0 0 1px var(--wc-border) inset;
+}
+
+html[data-theme] .main-scroll .el-input-number .el-input__inner {
+  color: var(--wc-text);
+}
+
+/* input-number 步进按钮：显式与主题底/字色一致（部分环境下仍残留 EP 浅灰底） */
+html[data-theme] .el-input-number__decrease,
+html[data-theme] .el-input-number__increase {
+  background-color: var(--el-fill-color-light) !important;
+  color: var(--wc-text) !important;
+}
+
+html[data-theme] .el-input-number__decrease:hover,
+html[data-theme] .el-input-number__increase:hover {
+  color: var(--wc-accent) !important;
+}
+
+html[data-theme] .el-input-number.is-disabled .el-input-number__decrease,
+html[data-theme] .el-input-number.is-disabled .el-input-number__increase {
+  color: var(--wc-muted) !important;
+}
+
+/* 文件夹页警告条：避免浅色大块与深色主调割裂 */
+html[data-theme] .main-scroll .el-alert--warning.is-light {
+  background-color: color-mix(in srgb, var(--wc-surface) 78%, #d97706 22%) !important;
+  border-color: var(--wc-border) !important;
+  color: var(--wc-text);
+}
+
+html[data-theme] .main-scroll .el-alert--warning.is-light .el-alert__description {
+  color: var(--wc-muted);
+}
+
+/* ========== 弹层 / 下拉 / 列表：与主题一致（teleport 到 body） ========== */
+html[data-theme] .el-popper.is-light {
+  --el-popper-bg-color-light: var(--wc-surface-elevated);
+  --el-bg-color-overlay: var(--wc-surface-elevated);
+  --el-border-color-light: var(--wc-border);
+  --el-text-color-regular: var(--wc-text);
+  --el-text-color-secondary: var(--wc-muted);
+  --el-text-color-primary: var(--wc-text);
+  --el-fill-color-light: color-mix(in srgb, var(--wc-accent) 12%, var(--wc-surface));
+  --el-fill-color-lighter: color-mix(in srgb, var(--wc-surface) 88%, var(--wc-text) 7%);
+  --el-fill-color-blank: var(--wc-surface);
+}
+
+html[data-theme] .el-dropdown-menu {
+  background-color: var(--wc-surface-elevated) !important;
+}
+
+html[data-theme] .el-dropdown-menu__item:not(.is-disabled):hover {
+  background-color: color-mix(in srgb, var(--wc-accent) 12%, var(--wc-surface)) !important;
+  color: var(--wc-text) !important;
+}
+
+html[data-theme] .el-select-dropdown__item.is-hovering {
+  background-color: color-mix(in srgb, var(--wc-accent) 12%, var(--wc-surface)) !important;
+}
+
+html[data-theme] .el-select-dropdown__item.is-selected {
+  color: var(--wc-accent) !important;
+  font-weight: 600;
+}
+
+/* 空状态（主内容区、侧栏集合列表等） */
+html[data-theme] .el-empty__description {
+  color: var(--wc-muted) !important;
+}
+
+/* 确认框 / 对话框 */
+html[data-theme] .el-message-box {
+  background-color: var(--wc-surface) !important;
+  border: 1px solid var(--wc-border) !important;
+  --el-messagebox-title-color: var(--wc-text);
+  --el-messagebox-content-color: var(--wc-text);
+}
+
+html[data-theme] .el-overlay-message-box {
+  background-color: color-mix(in srgb, var(--wc-bg) 65%, #000) !important;
+}
+
+html[data-theme] .el-dialog {
+  --el-dialog-bg-color: var(--wc-surface);
+  background: var(--wc-surface) !important;
+  border: 1px solid var(--wc-border) !important;
+}
+
+html[data-theme] .el-dialog__header {
+  color: var(--wc-text);
+  border-bottom: 1px solid var(--wc-border);
+}
+
+html[data-theme] .el-dialog__body {
+  color: var(--wc-text);
+}
+
+/* 集合页顶栏 Tabs：与主内容区背景、边框一致 */
+html[data-theme] .main-scroll .collection-tabs.el-tabs {
+  --el-tabs-header-height: 40px;
+  background: transparent;
+}
+html[data-theme] .main-scroll .collection-tabs .el-tabs__header {
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--wc-border);
+}
+html[data-theme] .main-scroll .collection-tabs .el-tabs__nav-wrap::after {
+  display: none;
+}
+html[data-theme] .main-scroll .collection-tabs .el-tabs__item {
+  color: var(--wc-muted);
+  font-weight: 500;
+}
+html[data-theme] .main-scroll .collection-tabs .el-tabs__item:hover {
+  color: var(--wc-text);
+}
+html[data-theme] .main-scroll .collection-tabs .el-tabs__item.is-active {
+  color: var(--wc-accent);
+  font-weight: 600;
+}
+html[data-theme] .main-scroll .collection-tabs .el-tabs__active-bar {
+  background-color: var(--wc-accent);
+}
+
+/*
+ * 登录页：输入框固定为 Element Plus 默认浅色（白底、灰边、#409eff 聚焦），
+ * 不随 html[data-theme] 的全局主题色 / --wc-* 变化。
+ */
+html[data-theme] .login-wrap {
+  --el-fill-color-blank: #ffffff;
+  --el-fill-color-light: #f5f7fa;
+  --el-text-color-regular: #606266;
+  --el-text-color-primary: #303133;
+  --el-text-color-placeholder: #a8abb2;
+  --el-input-bg-color: #ffffff;
+  --el-input-border-color: #dcdfe6;
+  --el-input-hover-border-color: #c0c4cc;
+  --el-input-focus-border-color: #409eff;
+  --el-input-text-color: #606266;
+}
+
+html[data-theme] .login-wrap .el-input__wrapper {
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+html[data-theme] .login-wrap .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px #c0c4cc inset !important;
+}
+
+html[data-theme] .login-wrap .el-input.is-focus .el-input__wrapper,
+html[data-theme] .login-wrap .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px #409eff inset !important;
+}
+
+html[data-theme] .login-wrap .el-input__inner {
+  color: #606266 !important;
+}
+
+html[data-theme] .login-wrap .el-input__inner::placeholder {
+  color: #a8abb2 !important;
+}
+
+html[data-theme] .login-wrap .el-input .el-input__suffix,
+html[data-theme] .login-wrap .el-input .el-input__prefix {
+  color: #a8abb2;
+}

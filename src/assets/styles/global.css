@@ -1,0 +1,101 @@
+/* 与 themes.css 中 slate 默认一致；html[data-theme] 会覆盖为其他色调 */
+:root {
+  --wc-bg: #0f1419;
+  --wc-surface: #151c27;
+  --wc-surface-elevated: #1a2332;
+  --wc-border: rgba(148, 163, 184, 0.16);
+  --wc-text: #e8eef7;
+  --wc-muted: #94a3b8;
+  --wc-sidebar: #0a0e14;
+  --wc-sidebar-border: rgba(148, 163, 184, 0.14);
+  --wc-topbar: linear-gradient(180deg, #0c1118 0%, #0a0e14 100%);
+  --wc-accent: #38bdf8;
+  --wc-accent-2: #818cf8;
+  --wc-menu-active-bg: rgba(56, 189, 248, 0.12);
+  --wc-menu-active-text: #e0f2fe;
+  --wc-code-bg: #070b10;
+  --wc-scrollbar: rgba(56, 189, 248, 0.35);
+  --wc-scrollbar-track: rgba(15, 23, 42, 0.45);
+  --wc-radius: 12px;
+  --wc-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--wc-text);
+  background: var(--wc-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  height: 100%;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--wc-scrollbar) var(--wc-scrollbar-track);
+}
+
+/* WebKit */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--wc-scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wc-accent) 55%, transparent),
+    color-mix(in srgb, var(--wc-muted) 45%, transparent)
+  );
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wc-accent) 75%, transparent),
+    color-mix(in srgb, var(--wc-muted) 55%, transparent)
+  );
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
