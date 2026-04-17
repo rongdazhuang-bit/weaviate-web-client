@@ -7,7 +7,7 @@ export default {
     emDash: '—',
   },
   app: {
-    docTitle: 'Weaviate Center',
+    docTitle: 'Weaviate Console',
     title: 'Weaviate Console',
     subtitle: 'Browse collections and run vector search',
     logout: 'Sign out',
@@ -25,7 +25,7 @@ export default {
     fetchClassesFailed: 'Failed to load collection list',
   },
   login: {
-    brandTitle: 'Weaviate Center',
+    brandTitle: 'Weaviate Console',
     brandSub: 'Connect to your instance, browse collections, and search vectors',
     address: 'Connection URL',
     addressPlaceholder: 'e.g. http://localhost:8080 or https://example.com:8080',

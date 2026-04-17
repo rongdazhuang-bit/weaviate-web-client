@@ -7,7 +7,7 @@ export default {
     emDash: '—',
   },
   app: {
-    docTitle: 'Weaviate 中心',
+    docTitle: 'Weaviate 控制台',
     title: 'Weaviate 控制台',
     subtitle: '向量库浏览与检索',
     logout: '退出登录',
@@ -25,7 +25,7 @@ export default {
     fetchClassesFailed: '获取集合列表失败',
   },
   login: {
-    brandTitle: 'Weaviate 中心',
+    brandTitle: 'Weaviate 控制台',
     brandSub: '连接你的实例，浏览集合与向量检索',
     address: '连接地址',
     addressPlaceholder: '例如 http://localhost:8080 或 https://example.com:8080',
