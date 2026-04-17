@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useRequestLoadingStore } from '@/stores/requestLoading'
 
 export interface EmbedResult {
   vector: number[]
@@ -14,25 +15,38 @@ export async function embedTextOpenAICompatible(opts: {
 }): Promise<EmbedResult> {
   const url = `${opts.baseURL.replace(/\/$/, '')}/embeddings`
   const started = performance.now()
-  const { data, status } = await axios.post<{
+  const loading = useRequestLoadingStore()
+  loading.begin()
+  let data: {
     data?: { embedding?: number[] }[]
     usage?: unknown
-  }>(
-    url,
-    {
-      model: opts.model,
-      input: opts.text,
-      encoding_format: 'float',
-    },
-    {
-      headers: {
-        Authorization: opts.apiKey.startsWith('Bearer ') ? opts.apiKey : `Bearer ${opts.apiKey}`,
-        'Content-Type': 'application/json',
+  }
+  let status: number
+  try {
+    const res = await axios.post<{
+      data?: { embedding?: number[] }[]
+      usage?: unknown
+    }>(
+      url,
+      {
+        model: opts.model,
+        input: opts.text,
+        encoding_format: 'float',
       },
-      timeout: 120_000,
-      validateStatus: (s) => s >= 200 && s < 500,
-    },
-  )
+      {
+        headers: {
+          Authorization: opts.apiKey.startsWith('Bearer ') ? opts.apiKey : `Bearer ${opts.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 120_000,
+        validateStatus: (s) => s >= 200 && s < 500,
+      },
+    )
+    data = res.data
+    status = res.status
+  } finally {
+    loading.end()
+  }
   const latencyMs = Math.round(performance.now() - started)
   if (status !== 200) {
     const msg = (data as { error?: { message?: string } })?.error?.message || `HTTP ${status}`

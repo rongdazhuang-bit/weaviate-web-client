@@ -4,15 +4,16 @@
       <div class="topbar-left">
         <div class="app-mark" aria-hidden="true">W</div>
         <div class="app-titles">
-          <div class="app-name">Weaviate 控制台</div>
-          <div class="app-sub">向量库浏览与检索</div>
+          <div class="app-name">{{ t('app.title') }}</div>
+          <div class="app-sub">{{ t('app.subtitle') }}</div>
         </div>
       </div>
       <div class="topbar-right">
+        <LanguageSwitcher />
         <ThemePicker />
-        <el-tooltip content="退出登录" placement="bottom">
+        <el-tooltip :content="t('app.logout')" placement="bottom">
           <span class="logout-wrap">
-            <el-button size="small" :icon="SwitchButton" circle aria-label="退出登录" @click="logout" />
+            <el-button size="small" :icon="SwitchButton" circle :aria-label="t('app.logoutAria')" @click="logout" />
           </span>
         </el-tooltip>
       </div>
@@ -27,7 +28,7 @@
           <el-input
             v-model="filter"
             clearable
-            placeholder="搜索集合"
+            :placeholder="t('nav.filterCollections')"
             size="small"
             class="filter aside-filter"
           />
@@ -38,13 +39,13 @@
               class="aside-menu"
             >
               <el-menu-item index="/app/cluster">
-                <span>集群</span>
+                <span>{{ t('nav.cluster') }}</span>
               </el-menu-item>
               <el-menu-item index="/app/search">
-                <span>检索</span>
+                <span>{{ t('nav.search') }}</span>
               </el-menu-item>
               <el-sub-menu index="collections">
-                <template #title>集合</template>
+                <template #title>{{ t('nav.collections') }}</template>
                 <el-menu-item
                   v-for="c in filteredClasses"
                   :key="c.class"
@@ -52,7 +53,7 @@
                 >
                   <span class="cls-name">{{ c.class }}</span>
                 </el-menu-item>
-                <el-empty v-if="!filteredClasses.length" description="无集合" :image-size="64" />
+                <el-empty v-if="!filteredClasses.length" :description="t('nav.noCollections')" :image-size="64" />
               </el-sub-menu>
             </el-menu>
           </el-scrollbar>
@@ -61,7 +62,7 @@
           class="aside-resizer"
           role="separator"
           aria-orientation="vertical"
-          aria-label="拖动调整侧栏宽度"
+          :aria-label="t('nav.asideResize')"
           @mousedown.prevent="onAsideResizeStart"
         />
       </div>
@@ -86,10 +87,15 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { useConnectionStore } from '@/stores/connection'
+import { useCollectionStatsStore } from '@/stores/collectionStats'
 import { fetchSchema, type WeaviateClass } from '@/api/weaviate'
 import { SwitchButton } from '@element-plus/icons-vue'
 import ThemePicker from '@/components/ThemePicker.vue'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+
+const { t } = useI18n()
 
 const ASIDE_WIDTH_KEY = 'wc_aside_width'
 const DEFAULT_ASIDE_WIDTH = 260
@@ -182,13 +188,14 @@ async function reloadClasses() {
   try {
     classes.value = await fetchSchema()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '获取集合列表失败'
+    const msg = e instanceof Error ? e.message : t('nav.fetchClassesFailed')
     ElMessage.error(msg)
     classes.value = []
   }
 }
 
 function logout() {
+  useCollectionStatsStore().reset()
   conn.disconnect()
   router.replace({ name: 'login' })
 }

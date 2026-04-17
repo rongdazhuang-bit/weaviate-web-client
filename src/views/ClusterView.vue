@@ -1,8 +1,8 @@
 <template>
   <div class="page page-cluster">
-    <h2 class="title">集群与发现</h2>
+    <h2 class="title">{{ t('cluster.title') }}</h2>
 
-    <section class="nodes-dashboard mt" aria-label="节点仪表盘">
+    <section class="nodes-dashboard mt" :aria-label="t('cluster.nodesAria')">
       <div v-if="nodeList.length" class="nodes-grid">
         <el-card
           v-for="(n, idx) in nodeList"
@@ -12,54 +12,134 @@
         >
           <dl class="node-dash-dl">
             <div class="node-dash-row">
-              <dt>名称</dt>
+              <dt>{{ t('cluster.node') }}</dt>
               <dd class="wrap">{{ n.name }}</dd>
             </div>
             <div class="node-dash-row">
-              <dt>模式</dt>
+              <dt>{{ t('cluster.mode') }}</dt>
               <dd>{{ n.operationalMode }}</dd>
             </div>
             <div class="node-dash-row">
-              <dt>状态</dt>
+              <dt>{{ t('cluster.status') }}</dt>
               <dd>
                 <el-tag :type="statusTagType(n.status)" size="small">{{ n.status }}</el-tag>
               </dd>
             </div>
             <div class="node-dash-row">
-              <dt>版本</dt>
+              <dt>{{ t('cluster.version') }}</dt>
               <dd class="mono">{{ n.version }}</dd>
             </div>
           </dl>
         </el-card>
       </div>
-      <el-empty v-else description="暂无节点数据" />
+      <el-empty v-else :description="t('cluster.noNodes')" />
     </section>
 
-    <el-card shadow="never" class="meta-card meta-card--fill mt">
-      <template #header>元信息（/v1/meta）</template>
-      <div v-if="metaJson" class="meta-json-scroll">
-        <pre class="json">{{ metaJson }}</pre>
-      </div>
-      <el-empty v-else description="暂无数据" />
-    </el-card>
+    <section class="meta-row mt">
+      <el-card shadow="never" class="collections-dash" :aria-label="t('cluster.collectionStats')">
+        <template #header>
+          <div class="collections-dash-header">
+            <span>{{ t('cluster.collectionStats') }}</span>
+            <el-button
+              size="small"
+              text
+              type="primary"
+              :loading="statsLoading"
+              class="dash-refresh-btn"
+              @click="onRefreshStats"
+            >
+              {{ t('common.refresh') }}
+            </el-button>
+          </div>
+        </template>
+        <div class="dash-summary">
+          <div class="dash-stat">
+            <span class="muted">{{ t('cluster.collectionCount') }}</span>
+            <strong class="dash-stat-value">{{ totalCollections }}</strong>
+          </div>
+          <div class="dash-stat">
+            <span class="muted">{{ t('cluster.objectTotal') }}</span>
+            <strong class="dash-stat-value">{{ totalObjectsText }}</strong>
+          </div>
+        </div>
+        <p v-if="partialCounts" class="dash-hint muted">{{ t('cluster.partialCountsHint') }}</p>
+        <p v-if="lastUpdatedAt" class="dash-cache-line muted">{{ cacheLineText }}</p>
+        <div class="dash-table-scroll">
+          <div class="dash-table-wrap">
+            <el-table
+              v-if="collectionStats.length"
+              :data="collectionStats"
+              size="small"
+              stripe
+              border
+              class="dash-table"
+              height="100%"
+            >
+            <el-table-column prop="name" :label="t('cluster.colName')" min-width="120" show-overflow-tooltip />
+            <el-table-column :label="t('cluster.colObjects')" width="88" align="right">
+                <template #default="{ row }">
+                  {{ row.count !== null ? row.count : t('common.emDash') }}
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-empty v-else-if="!statsLoading" :description="t('cluster.noCollections')" />
+          </div>
+        </div>
+      </el-card>
+
+      <el-card shadow="never" class="meta-card meta-card--fill">
+        <template #header>{{ t('cluster.metaHeader') }}</template>
+        <div v-if="metaJson" class="meta-json-scroll">
+          <pre class="json">{{ metaJson }}</pre>
+        </div>
+        <el-empty v-else :description="t('cluster.noMeta')" />
+      </el-card>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import {
-  fetchMeta,
-  fetchNodes,
-  parseWeaviateNodesPayload,
-  type WeaviateMeta,
-} from '@/api/weaviate'
+import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
+import { fetchMeta, fetchNodes, parseWeaviateNodesPayload, type WeaviateMeta } from '@/api/weaviate'
+import { useCollectionStatsStore } from '@/stores/collectionStats'
+import { formatWcDateTime } from '@/utils/dateTime'
+
+const { t } = useI18n()
 
 const nodes = ref<unknown | null>(null)
 const meta = ref<WeaviateMeta | null>(null)
 
+const statsStore = useCollectionStatsStore()
+const { rows: collectionStats, loading: statsLoading, lastUpdatedAt } = storeToRefs(statsStore)
+
 const nodeList = computed(() => parseWeaviateNodesPayload(nodes.value))
 
 const metaJson = computed(() => (meta.value ? JSON.stringify(meta.value, null, 2) : ''))
+
+const cacheLineText = computed(() => {
+  const ts = lastUpdatedAt.value
+  if (!ts) return ''
+  return t('cluster.cachedAt', { time: formatWcDateTime(ts) })
+})
+
+const totalCollections = computed(() => collectionStats.value.length)
+
+const totalObjectsText = computed(() => {
+  const rows = collectionStats.value
+  if (!rows.length) return t('common.emDash')
+  const nums = rows.map((r) => r.count).filter((n): n is number => n !== null)
+  if (!nums.length) return t('common.emDash')
+  return String(nums.reduce((a, b) => a + b, 0))
+})
+
+const partialCounts = computed(() => {
+  const rows = collectionStats.value
+  if (!rows.length) return false
+  return rows.some((r) => r.count === null)
+})
 
 function statusTagType(
   status: string,
@@ -71,14 +151,29 @@ function statusTagType(
   return 'warning'
 }
 
-async function load() {
+async function loadCluster() {
   const [metaRes, nodesRes] = await Promise.allSettled([fetchMeta(), fetchNodes()])
   meta.value = metaRes.status === 'fulfilled' ? metaRes.value : null
   nodes.value = nodesRes.status === 'fulfilled' ? nodesRes.value : null
 }
 
+/** preferCache=true 时命中内存缓存则不再请求；false 为强制重新统计 */
+async function loadCollectionStats(preferCache: boolean) {
+  try {
+    await statsStore.fetchStats(!preferCache)
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : t('cluster.statsFailed')
+    ElMessage.error(msg)
+  }
+}
+
+function onRefreshStats() {
+  void loadCollectionStats(false)
+}
+
 onMounted(() => {
-  load()
+  void loadCluster()
+  void loadCollectionStats(true)
 })
 </script>
 
@@ -160,9 +255,126 @@ onMounted(() => {
   word-break: break-all;
 }
 
+.meta-card {
+  border: 1px solid var(--wc-border);
+  background: var(--wc-surface-elevated);
+}
+
+/* 元信息行：左侧集合统计 + 右侧 meta JSON */
+.meta-row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.collections-dash {
+  flex: 0 0 clamp(260px, 32vw, 360px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--wc-border);
+  background: var(--wc-surface-elevated);
+}
+
+.collections-dash :deep(.el-card__header) {
+  padding: 12px 14px;
+}
+
+.collections-dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.collections-dash :deep(.el-card__body) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 14px;
+}
+
+.dash-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.dash-stat {
+  padding: 10px 12px;
+  border-radius: var(--wc-radius, 8px);
+  border: 1px solid var(--wc-border);
+  background: color-mix(in srgb, var(--wc-surface) 88%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-stat .muted {
+  font-size: 12px;
+}
+
+.dash-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--wc-text);
+  line-height: 1.2;
+}
+
+.dash-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.dash-cache-line {
+  margin: -4px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* 高度交给 el-table，表头固定、仅表体滚动（外层不再整体滚动） */
+.dash-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+}
+
+.dash-refresh-btn {
+  flex-shrink: 0;
+}
+
+.dash-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-table {
+  width: 100%;
+}
+
+.dash-table-wrap :deep(.el-table__inner-wrapper) {
+  min-height: 0;
+}
+
 /* 占满主区域剩余高度，JSON 仅在框内滚动 */
 .meta-card--fill {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;

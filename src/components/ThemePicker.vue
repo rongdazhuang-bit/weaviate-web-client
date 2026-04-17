@@ -1,8 +1,8 @@
 <template>
   <el-dropdown trigger="click" popper-class="wc-theme-dropdown" @command="onCommand">
     <span class="theme-trigger">
-      <el-tooltip content="主题色调" placement="bottom">
-        <el-button size="small" :icon="BrushFilled" circle aria-label="切换主题色调" />
+      <el-tooltip :content="t('theme.picker')" placement="bottom">
+        <el-button size="small" :icon="BrushFilled" circle :aria-label="t('theme.pickerAria')" />
       </el-tooltip>
     </span>
     <template #dropdown>
@@ -26,6 +26,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   BrushFilled,
   Monitor,
@@ -37,21 +39,23 @@ import {
 } from '@element-plus/icons-vue'
 import { useThemeStore, type ThemeId } from '@/stores/theme'
 
+const { t } = useI18n()
 const theme = useThemeStore()
 
-const items: {
-  id: ThemeId
-  label: string
-  icon: typeof Monitor
-  dot: string
-}[] = [
-  { id: 'slate', label: '青蓝', icon: Monitor, dot: '#38bdf8' },
-  { id: 'ocean', label: '海碧', icon: Compass, dot: '#22d3ee' },
-  { id: 'violet', label: '紫幕', icon: MagicStick, dot: '#c4b5fd' },
-  { id: 'forest', label: '森绿', icon: Cherry, dot: '#4ade80' },
-  { id: 'sunset', label: '暮金', icon: Sunset, dot: '#fbbf24' },
-  { id: 'sunshine', label: '阳光', icon: Sunny, dot: '#ca8a04' },
-]
+const items = computed(() => {
+  const defs: { id: ThemeId; icon: typeof Monitor; dot: string }[] = [
+    { id: 'slate', icon: Monitor, dot: '#38bdf8' },
+    { id: 'ocean', icon: Compass, dot: '#22d3ee' },
+    { id: 'violet', icon: MagicStick, dot: '#c4b5fd' },
+    { id: 'forest', icon: Cherry, dot: '#4ade80' },
+    { id: 'sunset', icon: Sunset, dot: '#fbbf24' },
+    { id: 'sunshine', icon: Sunny, dot: '#ca8a04' },
+  ]
+  return defs.map((d) => ({
+    ...d,
+    label: t(`theme.${d.id}`),
+  }))
+})
 
 function onCommand(id: string) {
   if (['slate', 'ocean', 'violet', 'forest', 'sunset', 'sunshine'].includes(id)) {

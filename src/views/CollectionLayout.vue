@@ -5,9 +5,9 @@
       class="collection-tabs"
       @tab-change="onTabChange"
     >
-      <el-tab-pane label="概览" name="overview" />
-      <el-tab-pane label="对象" name="objects" />
-      <el-tab-pane label="文件夹" name="folders" />
+      <el-tab-pane :label="t('collection.tabOverview')" name="overview" />
+      <el-tab-pane :label="t('collection.tabObjects')" name="objects" />
+      <el-tab-pane :label="t('collection.tabFolders')" name="folders" />
     </el-tabs>
     <div
       class="collection-tab-content"
@@ -20,7 +20,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()

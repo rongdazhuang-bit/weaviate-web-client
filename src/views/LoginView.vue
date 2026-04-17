@@ -1,30 +1,41 @@
 <template>
   <div class="login-wrap">
+    <div class="login-lang">
+      <LanguageSwitcher />
+    </div>
     <div class="login-bg" aria-hidden="true" />
     <el-card class="login-card" shadow="never">
       <div class="login-brand">
         <div class="logo">W</div>
         <div>
-          <div class="login-title">Weaviate 向量库</div>
-          <div class="login-sub">连接你的实例，浏览集合与向量检索</div>
+          <div class="login-title">{{ t('login.brandTitle') }}</div>
+          <div class="login-sub">{{ t('login.brandSub') }}</div>
         </div>
       </div>
       <el-form :model="form" label-position="top" class="login-form" @submit.prevent="onSubmit">
-        <el-form-item label="连接地址">
+        <el-form-item :label="t('login.address')">
           <el-input
             v-model="form.address"
-            placeholder="例如 http://localhost:8080 或 https://example.com:8080"
+            :placeholder="t('login.addressPlaceholder')"
             clearable
           />
         </el-form-item>
-        <el-form-item label="API Key（可选）">
-          <el-input v-model="form.apiKey" type="password" show-password placeholder="未启用鉴权可留空" clearable />
+        <el-form-item :label="t('login.apiKey')">
+          <el-input
+            v-model="form.apiKey"
+            type="password"
+            show-password
+            :placeholder="t('login.apiKeyPlaceholder')"
+            clearable
+          />
         </el-form-item>
         <el-form-item>
-          <el-checkbox v-model="form.remember">记住</el-checkbox>
+          <el-checkbox v-model="form.remember">{{ t('login.remember') }}</el-checkbox>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" native-type="submit" :loading="loading" class="w-full">连接并登录</el-button>
+          <el-button type="primary" native-type="submit" :loading="loading" class="w-full">{{
+            t('login.submit')
+          }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -34,12 +45,15 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useConnectionStore } from '@/stores/connection'
 import { fetchMeta, fetchReady } from '@/api/weaviate'
 import { parseConnectionInput } from '@/utils/connectionUrl'
 import { describeConnectionError, isMixedContentBlocked } from '@/utils/connectionErrors'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const conn = useConnectionStore()
@@ -80,14 +94,12 @@ function applyToStore() {
 async function onSubmit() {
   const parsed = parseConnectionInput(form.address)
   if (!parsed || !parsed.host.trim()) {
-    ElMessage.warning('请填写有效的连接地址')
+    ElMessage.warning(t('login.invalidAddress'))
     return
   }
   /* 生产环境直连时，HTTPS 页面不能请求 HTTP API；开发环境走同域 /weaviate 代理，不受混合内容限制 */
   if (!import.meta.env.DEV && isMixedContentBlocked(form.address)) {
-    ElMessage.error(
-      '当前页面为 HTTPS，无法直接请求 HTTP 的 Weaviate（浏览器混合内容限制）。请使用 HTTPS 访问 Weaviate，或将前端与 API 置于同域反向代理下。',
-    )
+    ElMessage.error(t('login.mixedContent'))
     return
   }
 
@@ -96,13 +108,13 @@ async function onSubmit() {
   try {
     const ok = await fetchReady()
     if (!ok) {
-      ElMessage.error('就绪检查未通过（/.well-known/ready）')
+      ElMessage.error(t('login.readyFailed'))
       return
     }
     await fetchMeta()
     conn.connected = true
     form.address = conn.connectionUrl
-    ElMessage.success('连接成功')
+    ElMessage.success(t('login.success'))
     const redir = (route.query.redirect as string) || '/app/cluster'
     await router.replace(redir)
   } catch (e: unknown) {
@@ -122,6 +134,12 @@ async function onSubmit() {
   padding: 32px 20px;
   position: relative;
   overflow: hidden;
+}
+.login-lang {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  z-index: 2;
 }
 .login-bg {
   position: absolute;

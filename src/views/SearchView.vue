@@ -1,48 +1,53 @@
 <template>
-  <div class="page search-page" v-loading="loading">
+  <div class="page search-page">
     <div class="search-top">
-      <h2 class="title">向量检索</h2>
+      <h2 class="title">{{ t('search.title') }}</h2>
       <el-row :gutter="16">
         <el-col :span="10">
           <el-card shadow="never">
-            <template #header>嵌入服务（OpenAI 兼容）</template>
+            <template #header>{{ t('search.embedCard') }}</template>
             <el-form label-position="top" size="small">
-              <el-form-item label="Base URL">
+              <el-form-item :label="t('search.baseUrl')">
                 <el-input v-model="emb.baseURL" placeholder="https://api.openai.com/v1" />
               </el-form-item>
-              <el-form-item label="Model">
+              <el-form-item :label="t('search.model')">
                 <el-input v-model="emb.model" placeholder="text-embedding-3-small" />
               </el-form-item>
-              <el-form-item label="API Key">
-                <el-input v-model="emb.apiKey" type="password" show-password placeholder="浏览器直连可能受 CORS 限制" />
+              <el-form-item :label="t('search.apiKey')">
+                <el-input
+                  v-model="emb.apiKey"
+                  type="password"
+                  show-password
+                  :placeholder="t('search.embedPlaceholder')"
+                />
               </el-form-item>
               <el-form-item>
-                <el-button @click="testEmbed" :loading="testing">测试嵌入</el-button>
-                <span v-if="emb.dimensions" class="dim">已测维度：{{ emb.dimensions }}</span>
+                <el-button @click="testEmbed" :loading="testing">{{ t('search.testEmbed') }}</el-button>
+                <span v-if="emb.dimensions" class="dim">{{ t('search.testedDims', { n: emb.dimensions }) }}</span>
               </el-form-item>
             </el-form>
           </el-card>
         </el-col>
         <el-col :span="14">
           <el-card shadow="never">
-            <template #header>查询</template>
+            <template #header>{{ t('search.queryCard') }}</template>
             <el-form label-position="top" size="small">
-              <el-form-item label="目标集合">
-                <el-select v-model="className" filterable placeholder="选择集合" style="width: 100%">
+              <el-form-item :label="t('search.targetClass')">
+                <el-select v-model="className" filterable :placeholder="t('search.selectClass')" style="width: 100%">
                   <el-option v-for="c in classes" :key="c.class" :label="c.class" :value="c.class" />
                 </el-select>
               </el-form-item>
-              <el-form-item label="查询文本">
-                <el-input v-model="queryText" type="textarea" :rows="4" placeholder="输入自然语言查询" />
+              <el-form-item :label="t('search.queryText')">
+                <el-input v-model="queryText" type="textarea" :rows="4" :placeholder="t('search.queryPlaceholder')" />
               </el-form-item>
-              <el-form-item label="返回条数">
+              <el-form-item :label="t('search.limit')">
                 <el-input-number v-model="limit" :min="1" :max="100" />
               </el-form-item>
               <el-form-item>
-                <el-checkbox v-model="useNearText">尝试 nearText（需 Weaviate 内置 text2vec 等模块）</el-checkbox>
+                <el-checkbox v-model="useNearText">{{ t('search.nearText') }}</el-checkbox>
               </el-form-item>
               <el-form-item>
-                <el-button :loading="searching" @click="runSearch">检索</el-button>
+                <el-button :loading="searching" @click="runSearch">{{ t('search.runSearch') }}</el-button>
               </el-form-item>
             </el-form>
           </el-card>
@@ -51,7 +56,7 @@
     </div>
 
     <el-card v-if="hits.length" class="search-results-card" shadow="never">
-      <template #header>结果</template>
+      <template #header>{{ t('search.results') }}</template>
       <div class="search-table-scroll">
         <el-table
           class="search-results-table"
@@ -61,12 +66,12 @@
           height="100%"
         >
           <el-table-column prop="id" label="id" width="220" show-overflow-tooltip />
-          <el-table-column label="distance / certainty">
+          <el-table-column :label="t('search.colDistance')">
             <template #default="{ row }">
-              {{ row.distance ?? '—' }} / {{ row.certainty ?? '—' }}
+              {{ row.distance ?? t('common.emDash') }} / {{ row.certainty ?? t('common.emDash') }}
             </template>
           </el-table-column>
-          <el-table-column label="properties">
+          <el-table-column :label="t('search.colProps')">
             <template #default="{ row }">
               <pre class="cell-json">{{ JSON.stringify(row.properties, null, 2) }}</pre>
             </template>
@@ -79,14 +84,15 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useEmbeddingStore } from '@/stores/embedding'
 import { embedTextOpenAICompatible } from '@/api/embedding'
 import { fetchClassSchema, fetchSchema, nearTextSearch, nearVectorSearch, type WeaviateClass } from '@/api/weaviate'
 import { propertyNamesFromClass } from '@/utils/schema'
 
+const { t } = useI18n()
 const emb = useEmbeddingStore()
-const loading = ref(false)
 const testing = ref(false)
 const searching = ref(false)
 const classes = ref<WeaviateClass[]>([])
@@ -104,18 +110,13 @@ const hits = ref<
 >([])
 
 async function loadClasses() {
-  loading.value = true
-  try {
-    classes.value = await fetchSchema()
-    if (!className.value && classes.value.length) className.value = classes.value[0].class
-  } finally {
-    loading.value = false
-  }
+  classes.value = await fetchSchema()
+  if (!className.value && classes.value.length) className.value = classes.value[0].class
 }
 
 async function testEmbed() {
   if (!emb.baseURL.trim() || !emb.model.trim() || !emb.apiKey.trim()) {
-    ElMessage.warning('请填写 Base URL、Model、API Key')
+    ElMessage.warning(t('search.fillEmbed'))
     return
   }
   testing.value = true
@@ -127,9 +128,9 @@ async function testEmbed() {
       text: 'weaviate embedding test',
     })
     emb.dimensions = r.dimensions
-    ElMessage.success(`嵌入成功，耗时 ${r.latencyMs} ms，维度 ${r.dimensions}`)
+    ElMessage.success(t('search.embedOk', { ms: r.latencyMs, dim: r.dimensions }))
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '嵌入失败'
+    const msg = e instanceof Error ? e.message : t('search.embedFail')
     ElMessage.error(msg)
   } finally {
     testing.value = false
@@ -138,11 +139,11 @@ async function testEmbed() {
 
 async function runSearch() {
   if (!className.value) {
-    ElMessage.warning('请选择集合')
+    ElMessage.warning(t('search.pickClass'))
     return
   }
   if (!queryText.value.trim()) {
-    ElMessage.warning('请输入查询文本')
+    ElMessage.warning(t('search.enterQuery'))
     return
   }
   searching.value = true
@@ -157,13 +158,15 @@ async function runSearch() {
         return
       } catch (e: unknown) {
         ElMessage.warning(
-          `nearText 失败：${e instanceof Error ? e.message : 'unknown'}；将回退到嵌入 + nearVector`,
+          t('search.nearTextWarn', {
+            msg: e instanceof Error ? e.message : 'unknown',
+          }),
         )
       }
     }
 
     if (!emb.baseURL.trim() || !emb.model.trim() || !emb.apiKey.trim()) {
-      ElMessage.error('请配置嵌入服务以使用 nearVector')
+      ElMessage.error(t('search.needEmbed'))
       return
     }
     const { vector } = await embedTextOpenAICompatible({
@@ -175,7 +178,7 @@ async function runSearch() {
     emb.dimensions = vector.length
     hits.value = await nearVectorSearch(className.value, vector, limit.value, props)
   } catch (e: unknown) {
-    ElMessage.error(e instanceof Error ? e.message : '检索失败')
+    ElMessage.error(e instanceof Error ? e.message : t('search.searchFail'))
   } finally {
     searching.value = false
   }

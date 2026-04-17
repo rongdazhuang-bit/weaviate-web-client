@@ -1,24 +1,25 @@
 <template>
-  <div class="page" v-loading="loading">
+  <div class="page">
     <el-card shadow="never">
       <el-form inline size="small" class="form">
-        <el-form-item label="路径字段">
-          <el-select v-model="pathField" placeholder="选择属性" style="width: 220px" filterable>
+        <el-form-item :label="t('folders.pathField')">
+          <el-select v-model="pathField" :placeholder="t('folders.selectProp')" style="width: 220px" filterable>
             <el-option v-for="p in propNames" :key="p" :label="p" :value="p" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button @click="buildTree" :loading="scanning">扫描并生成树</el-button>
+          <el-button @click="buildTree" :loading="scanning">{{ t('folders.scanTree') }}</el-button>
         </el-form-item>
       </el-form>
       <el-tree v-if="treeData.length" :data="treeData" :props="treeProps" default-expand-all />
-      <el-empty v-else description="请先选择路径字段并生成树" />
+      <el-empty v-else :description="t('folders.emptyHint')" />
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { fetchClassSchema, listObjects, type WeaviateClass } from '@/api/weaviate'
 import { propertyNamesFromClass } from '@/utils/schema'
@@ -28,8 +29,8 @@ interface TreeNode {
   children?: TreeNode[]
 }
 
+const { t } = useI18n()
 const route = useRoute()
-const loading = ref(false)
 const scanning = ref(false)
 const cls = ref<WeaviateClass | null>(null)
 const pathField = ref('')
@@ -43,15 +44,10 @@ const className = computed(() => decodeURIComponent(route.params.name as string)
 const propNames = computed(() => propertyNamesFromClass(cls.value))
 
 async function loadSchema() {
-  loading.value = true
-  try {
-    cls.value = await fetchClassSchema(className.value)
-    const names = propNames.value
-    if (names.length && !pathField.value) {
-      pathField.value = names.find((n) => /path|dir|folder|file/i.test(n)) || names[0] || ''
-    }
-  } finally {
-    loading.value = false
+  cls.value = await fetchClassSchema(className.value)
+  const names = propNames.value
+  if (names.length && !pathField.value) {
+    pathField.value = names.find((n) => /path|dir|folder|file/i.test(n)) || names[0] || ''
   }
 }
 
@@ -89,7 +85,8 @@ async function buildTree() {
         const s = raw === undefined || raw === null ? '' : String(raw)
         const segments = s.split('/').filter(Boolean)
         if (!segments.length) {
-          if (!roots.has('(空路径)')) roots.set('(空路径)', { name: '(空路径)', children: new Map() })
+          const emptyLabel = t('folders.emptyPath')
+          if (!roots.has(emptyLabel)) roots.set(emptyLabel, { name: emptyLabel, children: new Map() })
           continue
         }
         addSegments(roots, segments)
