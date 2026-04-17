@@ -19,8 +19,15 @@ export const useConnectionStore = defineStore('connection', () => {
   const remember = ref(false)
   const connected = ref(false)
 
-  /** 开发构建下自动走 Vite 同域代理，避免浏览器直连 Weaviate 的 CORS */
-  const useDevProxy = computed(() => import.meta.env.DEV)
+  /**
+   * 开发：Vite 同域 /weaviate。
+   * 生产：若构建时开启 VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY（如 Docker+Nginx+Node），则同样走 /weaviate，由服务端 Node 转发。
+   */
+  const useSameOriginWeaviateProxy = computed(
+    () =>
+      import.meta.env.DEV ||
+      import.meta.env.VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY === 'true',
+  )
 
   const connectionUrl = computed(() => {
     const h = host.value.trim()
@@ -28,9 +35,8 @@ export const useConnectionStore = defineStore('connection', () => {
     return `${protocol.value}://${h}:${port.value}`
   })
 
-  /** 开发环境：请求发往 /weaviate，由 Vite 转发至 connectionUrl；生产环境：直连 */
   const baseURL = computed(() => {
-    if (import.meta.env.DEV) {
+    if (useSameOriginWeaviateProxy.value) {
       return `${window.location.origin}/weaviate`
     }
     return connectionUrl.value
@@ -90,7 +96,7 @@ export const useConnectionStore = defineStore('connection', () => {
     if (k) {
       headers['Authorization'] = k.startsWith('Bearer ') ? k : `Bearer ${k}`
     }
-    if (import.meta.env.DEV && connectionUrl.value) {
+    if (useSameOriginWeaviateProxy.value && connectionUrl.value) {
       headers['X-Weaviate-Target'] = connectionUrl.value
     }
   }
@@ -107,7 +113,7 @@ export const useConnectionStore = defineStore('connection', () => {
     apiKey,
     remember,
     connected,
-    useDevProxy,
+    useSameOriginWeaviateProxy,
     connectionUrl,
     baseURL,
     loadRemembered,

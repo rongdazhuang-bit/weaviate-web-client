@@ -154,7 +154,7 @@ export default {
     connection: {
       timeout: '请求超时，请检查网络或目标服务是否可达',
       network:
-        '无法连接到该地址，请确认 Weaviate 已启动，且地址、端口、协议正确。若控制台出现跨域相关报错，需在服务端配置 CORS，或将前端与 Weaviate 置于同域反向代理之后。',
+        '无法连接该地址。请确认：① Weaviate 已启动；② URL 正确（协议 http/https、主机、端口）。若浏览器控制台报 CORS：在 Weaviate 配置允许的来源，或通过反向代理使前端与 API 同域。',
       auth: '鉴权失败，请检查 API Key',
       httpDetail: '{detail}（HTTP {status}）',
       httpFail: '请求失败（HTTP {status}）',

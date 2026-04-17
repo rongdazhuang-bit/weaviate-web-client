@@ -155,7 +155,7 @@ export default {
     connection: {
       timeout: 'Request timed out. Check network and that the service is reachable.',
       network:
-        'Cannot connect. Ensure Weaviate is running and URL/port/protocol are correct. For CORS errors, configure CORS on the server or use a same-origin reverse proxy.',
+        'Cannot connect. Check: (1) Weaviate is running; (2) URL is correct (scheme, host, port). If the browser shows CORS: allow your origin on Weaviate or serve the UI and API on the same origin (reverse proxy).',
       auth: 'Authentication failed. Check your API Key.',
       httpDetail: '{detail} (HTTP {status})',
       httpFail: 'Request failed (HTTP {status})',

@@ -97,8 +97,8 @@ async function onSubmit() {
     ElMessage.warning(t('login.invalidAddress'))
     return
   }
-  /* 生产环境直连时，HTTPS 页面不能请求 HTTP API；开发环境走同域 /weaviate 代理，不受混合内容限制 */
-  if (!import.meta.env.DEV && isMixedContentBlocked(form.address)) {
+  /* 直连 Weaviate 时 HTTPS 页不能请求 HTTP；同域 /weaviate 由服务端转发则不受混合内容限制 */
+  if (!conn.useSameOriginWeaviateProxy && isMixedContentBlocked(form.address)) {
     ElMessage.error(t('login.mixedContent'))
     return
   }

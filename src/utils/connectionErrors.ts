@@ -1,6 +1,20 @@
 import axios from 'axios'
 import { i18n } from '@/i18n'
 
+/** 按运行环境选择 .env 中的覆盖文案：development > production > 通用，均未设置则走 i18n */
+function networkConnectionMessageOverride(): string | undefined {
+  if (import.meta.env.DEV) {
+    const d = import.meta.env.VITE_CONNECTION_NETWORK_MESSAGE_DEVELOPMENT?.trim()
+    if (d) return d
+  }
+  if (import.meta.env.PROD) {
+    const p = import.meta.env.VITE_CONNECTION_NETWORK_MESSAGE_PRODUCTION?.trim()
+    if (p) return p
+  }
+  const common = import.meta.env.VITE_CONNECTION_NETWORK_MESSAGE?.trim()
+  return common || undefined
+}
+
 /** 当前页为 HTTPS 且连接地址为 HTTP 时，浏览器会拦截（混合内容），与 CORS 无关 */
 export function isMixedContentBlocked(connectionAddress: string): boolean {
   if (typeof window === 'undefined') return false
@@ -21,6 +35,8 @@ export function describeConnectionError(err: unknown): string {
     }
 
     if (code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      const custom = networkConnectionMessageOverride()
+      if (custom) return custom
       return t('errors.connection.network')
     }
 
