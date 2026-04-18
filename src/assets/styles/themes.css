@@ -641,6 +641,36 @@ html[data-theme] .el-overlay-message-box {
   background-color: color-mix(in srgb, var(--wc-bg) 65%, #000) !important;
 }
 
+/* 集合对象：删除确认（列表与详情共用）：保证面板与遮罩不透明，避免与 API 迁移透明样式混淆或 EP 内层无底色 */
+html[data-theme] .el-message-box.wc-objects-delete-msgbox {
+  --el-bg-color: var(--wc-surface);
+  background: var(--wc-surface) !important;
+  background-color: var(--wc-surface) !important;
+  box-shadow: var(--wc-shadow) !important;
+  border: 1px solid var(--wc-border) !important;
+}
+
+html[data-theme] .el-message-box.wc-objects-delete-msgbox .el-message-box__header,
+html[data-theme] .el-message-box.wc-objects-delete-msgbox .el-message-box__content,
+html[data-theme] .el-message-box.wc-objects-delete-msgbox .el-message-box__container,
+html[data-theme] .el-message-box.wc-objects-delete-msgbox .el-message-box__message,
+html[data-theme] .el-message-box.wc-objects-delete-msgbox .el-message-box__status,
+html[data-theme] .el-message-box.wc-objects-delete-msgbox .el-message-box__btns {
+  background: var(--wc-surface) !important;
+  background-color: var(--wc-surface) !important;
+}
+
+html[data-theme] .el-overlay-message-box:has(.wc-objects-delete-msgbox),
+/* modalClass 挂在 ElOverlay 根节点（.el-overlay），不是内层 .el-overlay-message-box */
+html[data-theme] .el-overlay.wc-objects-delete-msgbox-overlay {
+  background-color: color-mix(in srgb, var(--wc-bg) 65%, #000) !important;
+}
+
+html[data-theme='sunshine'] .el-overlay-message-box:has(.wc-objects-delete-msgbox),
+html[data-theme='sunshine'] .el-overlay.wc-objects-delete-msgbox-overlay {
+  background-color: rgba(15, 23, 42, 0.35) !important;
+}
+
 /* API 迁移「启动正式迁移」确认框：面板与遮罩透明，仅保留边框便于辨认区域 */
 html[data-theme] .el-message-box.wc-migration-confirm-msgbox {
   background: transparent !important;

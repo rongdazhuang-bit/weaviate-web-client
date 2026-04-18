@@ -175,6 +175,10 @@ async function confirmAndDeleteObject(id: string) {
       confirmButtonText: t('common.confirm'),
       cancelButtonText: t('common.cancel'),
       type: 'warning',
+      customClass: 'wc-objects-delete-msgbox',
+      customStyle: { backgroundColor: 'var(--wc-surface)' },
+      appendTo: document.body,
+      modalClass: 'wc-objects-delete-msgbox-overlay',
     })
   } catch {
     return
