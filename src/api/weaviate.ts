@@ -147,6 +147,15 @@ export async function fetchClassSchema(
   return data
 }
 
+/** DELETE /v1/schema/{className} — 删除集合（class）定义及其全部对象数据 */
+export async function deleteClassSchema(
+  className: string,
+  client: AxiosInstance = createWeaviateAxios(),
+): Promise<void> {
+  const { status } = await client.delete(`/v1/schema/${encodeURIComponent(className)}`)
+  if (status !== 200 && status !== 204) throw new Error(`delete schema HTTP ${status}`)
+}
+
 export async function graphqlQuery<T = unknown>(
   query: string,
   client: AxiosInstance = createWeaviateAxios(),
@@ -236,6 +245,8 @@ export interface NearVectorHit {
   certainty?: number
   /** BM25：GraphQL `_additional.score`；向量检索通常不填 */
   score?: number
+  /** BM25：GraphQL `_additional.explainScore`（BM25F 分解说明） */
+  explainScore?: string
   properties: Record<string, unknown>
   vectorPreview?: number[]
 }
@@ -248,6 +259,23 @@ function parseGraphQLNumber(v: unknown): number | undefined {
     if (Number.isFinite(n)) return n
   }
   return undefined
+}
+
+/** 解析 BM25 / hybrid 返回的 explainScore（多为字符串，亦可能为结构化 JSON） */
+function explainScoreToDisplayString(v: unknown): string | undefined {
+  if (v == null) return undefined
+  if (typeof v === 'string') {
+    const t = v.trim()
+    return t.length ? t : undefined
+  }
+  if (typeof v === 'object') {
+    try {
+      return JSON.stringify(v, null, 2)
+    } catch {
+      return String(v)
+    }
+  }
+  return String(v)
 }
 
 export async function nearVectorSearch(
@@ -320,7 +348,7 @@ export async function bm25Search(
           properties: [${bm25Props}]`
     : `query: "${escaped}"`
   const fields = [
-    '_additional { id score }',
+    '_additional { id score explainScore }',
     ...propertyNames.filter((p) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(p)),
   ].join('\n')
   const q = `{
@@ -344,14 +372,18 @@ export async function bm25Search(
   }
   const rows = res.inner?.Get?.[className] ?? []
   return rows.map((row) => {
-    const add = row._additional as { id?: string; score?: unknown } | undefined
+    const add = row._additional as
+      | { id?: string; score?: unknown; explainScore?: unknown }
+      | undefined
     const { _additional, ...rest } = row
     const score = parseGraphQLNumber(add?.score)
+    const explainScore = explainScoreToDisplayString(add?.explainScore)
     return {
       id: add?.id,
       distance: undefined,
       certainty: undefined,
       score,
+      explainScore,
       properties: rest as Record<string, unknown>,
     }
   })

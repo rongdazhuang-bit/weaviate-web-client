@@ -91,6 +91,12 @@ export default {
     noVector: '无向量配置',
     noMultiTenancy: '无多租户配置',
     noInverted: '无倒排索引配置',
+    deleteCollection: '删除集合',
+    deleteCollectionConfirmTitle: '删除集合',
+    deleteCollectionConfirmMsg:
+      '将永久删除该集合的 Schema 及其全部对象数据，不可恢复。\n\n集合：{name}',
+    deleteCollectionOk: '已删除集合「{name}」',
+    deleteCollectionFail: '删除集合失败',
   },
   objects: {
     class: 'class',
@@ -257,6 +263,8 @@ export default {
     colVectorDistance: 'distance',
     colVectorCertainty: 'certainty',
     colBm25Score: 'score',
+    colBm25ExplainScore: 'explainScore',
+    colBm25ExplainScoreHint: '对应 Weaviate：_additional.explainScore（BM25F 分解）',
     colProps: 'properties',
     fillEmbed: '请填写 Base URL、Model、API Key',
     embedOk: '嵌入成功，耗时 {ms} ms，维度 {dim}',

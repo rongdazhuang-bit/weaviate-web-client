@@ -92,6 +92,12 @@ export default {
     noVector: 'No vector config',
     noMultiTenancy: 'No multi-tenancy config',
     noInverted: 'No inverted index config',
+    deleteCollection: 'Delete collection',
+    deleteCollectionConfirmTitle: 'Delete collection',
+    deleteCollectionConfirmMsg:
+      'This permanently deletes the collection schema and all object data. This cannot be undone.\n\nCollection: {name}',
+    deleteCollectionOk: 'Collection «{name}» deleted',
+    deleteCollectionFail: 'Failed to delete collection',
   },
   objects: {
     class: 'class',
@@ -258,6 +264,8 @@ export default {
     colVectorDistance: 'distance',
     colVectorCertainty: 'certainty',
     colBm25Score: 'score',
+    colBm25ExplainScore: 'explainScore',
+    colBm25ExplainScoreHint: 'Weaviate: _additional.explainScore (BM25F breakdown)',
     colProps: 'properties',
     fillEmbed: 'Fill Base URL, Model, and API Key',
     embedOk: 'Embedding OK, {ms} ms, {dim} dimensions',

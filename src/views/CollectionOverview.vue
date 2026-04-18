@@ -15,6 +15,16 @@
         >
           {{ t('common.refresh') }}
         </el-button>
+        <el-button
+          type="danger"
+          size="small"
+          class="ml"
+          :loading="deleting"
+          :disabled="loading || !cls"
+          @click="onDeleteCollection"
+        >
+          {{ t('collection.deleteCollection') }}
+        </el-button>
       </template>
       <div class="overview-body">
         <el-descriptions
@@ -209,15 +219,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
-import { aggregateCount, fetchClassSchema, type WeaviateClass } from '@/api/weaviate'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { aggregateCount, deleteClassSchema, fetchClassSchema, type WeaviateClass } from '@/api/weaviate'
+import { useCollectionStatsStore } from '@/stores/collectionStats'
 import { configObjectToRows } from '@/utils/configTable'
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
+const collectionStats = useCollectionStatsStore()
+const reloadAppClasses = inject<() => Promise<void>>('reloadAppClasses', () => Promise.resolve())
 const loading = ref(false)
+const deleting = ref(false)
 const cls = ref<WeaviateClass | null>(null)
 const count = ref<number | null>(null)
 
@@ -259,6 +275,36 @@ async function load() {
     count.value = null
   } finally {
     loading.value = false
+  }
+}
+
+async function onDeleteCollection() {
+  const name = className.value
+  if (!cls.value || !name) return
+  try {
+    await ElMessageBox.confirm(
+      t('collection.deleteCollectionConfirmMsg', { name }),
+      t('collection.deleteCollectionConfirmTitle'),
+      {
+        type: 'warning',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      },
+    )
+  } catch {
+    return
+  }
+  deleting.value = true
+  try {
+    await deleteClassSchema(name)
+    ElMessage.success(t('collection.deleteCollectionOk', { name }))
+    await reloadAppClasses()
+    await collectionStats.fetchStats(true)
+    await router.replace({ name: 'overview' })
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : t('collection.deleteCollectionFail'))
+  } finally {
+    deleting.value = false
   }
 }
 

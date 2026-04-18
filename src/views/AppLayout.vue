@@ -92,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
@@ -219,6 +219,8 @@ function logout() {
   conn.disconnect()
   router.replace({ name: 'login' })
 }
+
+provide('reloadAppClasses', reloadClasses)
 
 onMounted(() => {
   loadAsideWidth()

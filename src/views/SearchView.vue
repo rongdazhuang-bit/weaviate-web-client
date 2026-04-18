@@ -116,6 +116,22 @@
                 {{ row.score != null ? row.score : t('common.emDash') }}
               </template>
             </el-table-column>
+            <el-table-column v-if="searchMode === 'bm25'" min-width="320">
+              <template #header>
+                <span class="explain-col-header">
+                  {{ t('search.colBm25ExplainScore') }}
+                  <el-tooltip :content="t('search.colBm25ExplainScoreHint')" placement="top">
+                    <span class="explain-col-hint-wrap" tabindex="-1" role="presentation">
+                      <el-icon class="explain-col-hint-icon"><InfoFilled /></el-icon>
+                    </span>
+                  </el-tooltip>
+                </span>
+              </template>
+              <template #default="{ row }">
+                <pre v-if="row.explainScore" class="cell-json explain-score-cell">{{ row.explainScore }}</pre>
+                <span v-else class="muted">{{ t('common.emDash') }}</span>
+              </template>
+            </el-table-column>
             <el-table-column
               v-if="searchMode === 'vector'"
               :label="t('search.colVectorDistance')"
@@ -155,7 +171,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Loading } from '@element-plus/icons-vue'
+import { InfoFilled, Loading } from '@element-plus/icons-vue'
 import { useEmbeddingStore } from '@/stores/embedding'
 import { embedTextOpenAICompatible } from '@/api/embedding'
 import {
@@ -185,7 +201,7 @@ const bm25SelectedFields = ref<string[]>([])
 const resultsDrawerVisible = ref(false)
 const hits = ref<NearVectorHit[]>([])
 
-/** 展示 GraphQL `_additional` 中的 distance / certainty（与 BM25 的 score 分列） */
+/** 展示 GraphQL `_additional`：向量 distance/certainty；BM25 的 score 与 explainScore */
 function formatMetric(v: number | undefined): string {
   if (v == null || !Number.isFinite(v)) return t('common.emDash')
   const s = v.toFixed(6)
@@ -369,6 +385,31 @@ onMounted(() => loadClasses())
   font-size: 11px;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.explain-col-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+}
+
+.explain-col-hint-wrap {
+  display: inline-flex;
+  outline: none;
+}
+
+.explain-col-hint-icon {
+  font-size: 14px;
+  color: var(--wc-muted);
+  cursor: help;
+}
+
+.explain-score-cell {
+  max-height: 220px;
+  overflow: auto;
+  line-height: 1.45;
+  color: var(--wc-text);
 }
 </style>
 
