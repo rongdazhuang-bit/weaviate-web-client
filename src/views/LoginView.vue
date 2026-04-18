@@ -115,7 +115,7 @@ async function onSubmit() {
     conn.connected = true
     form.address = conn.connectionUrl
     ElMessage.success(t('login.success'))
-    const redir = (route.query.redirect as string) || '/app/cluster'
+    const redir = (route.query.redirect as string) || '/app/overview'
     await router.replace(redir)
   } catch (e: unknown) {
     ElMessage.error(describeConnectionError(e))

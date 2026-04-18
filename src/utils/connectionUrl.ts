@@ -37,3 +37,18 @@ export function parseConnectionInput(input: string): {
     return null
   }
 }
+
+/** 将用户输入的连接串规范为 `http(s)://host:port`（用于 X-Weaviate-Target 或直连 baseURL） */
+export function normalizeConnectionUrl(input: string): string | null {
+  const p = parseConnectionInput(input)
+  if (!p) return null
+  return `${p.protocol}://${p.host}:${p.port}`
+}
+
+/** 判断两处连接输入是否指向同一 Weaviate 端点（规范化后比较，忽略大小写差异） */
+export function areSameWeaviateEndpoints(a: string, b: string): boolean {
+  const na = normalizeConnectionUrl(a)
+  const nb = normalizeConnectionUrl(b)
+  if (!na || !nb) return false
+  return na.toLowerCase() === nb.toLowerCase()
+}

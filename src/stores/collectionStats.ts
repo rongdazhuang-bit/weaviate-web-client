@@ -8,7 +8,7 @@ export interface CollectionStatRow {
   count: number | null
 }
 
-/** 集群页「集合统计」：异步拉取后按连接 URL 缓存于内存，退出登录时清空 */
+/** 概览页「集合统计」：异步拉取后按连接 URL 缓存于内存，退出登录时清空 */
 export const useCollectionStatsStore = defineStore('collectionStats', () => {
   const rows = ref<CollectionStatRow[]>([])
   /** 缓存对应的连接地址，切换实例后自动失效 */

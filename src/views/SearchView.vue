@@ -40,11 +40,38 @@
               <el-form-item :label="t('search.queryText')">
                 <el-input v-model="queryText" type="textarea" :rows="4" :placeholder="t('search.queryPlaceholder')" />
               </el-form-item>
+              <el-form-item :label="t('search.searchMode')">
+                <el-select v-model="searchMode" style="width: 100%">
+                  <el-option value="bm25" :label="t('search.searchModeBm25')" />
+                  <el-option value="vector" :label="t('search.searchModeVector')" />
+                </el-select>
+                <p class="mode-hint muted">{{ searchMode === 'bm25' ? t('search.modeHintBm25') : t('search.modeHintVector') }}</p>
+              </el-form-item>
+              <el-form-item
+                v-if="searchMode === 'bm25'"
+                :label="t('search.bm25Properties')"
+              >
+                <el-select
+                  v-model="bm25SelectedFields"
+                  multiple
+                  collapse-tags
+                  collapse-tags-tooltip
+                  filterable
+                  :placeholder="t('search.bm25PropertiesPlaceholder')"
+                  style="width: 100%"
+                  :disabled="!bm25FieldOptions.length"
+                >
+                  <el-option
+                    v-for="p in bm25FieldOptions"
+                    :key="p"
+                    :label="p"
+                    :value="p"
+                  />
+                </el-select>
+                <p class="mode-hint muted">{{ t('search.bm25PropertiesHint') }}</p>
+              </el-form-item>
               <el-form-item :label="t('search.limit')">
                 <el-input-number v-model="limit" :min="1" :max="100" />
-              </el-form-item>
-              <el-form-item>
-                <el-checkbox v-model="useNearText">{{ t('search.nearText') }}</el-checkbox>
               </el-form-item>
               <el-form-item>
                 <el-button :loading="searching" @click="runSearch">{{ t('search.runSearch') }}</el-button>
@@ -55,40 +82,90 @@
       </el-row>
     </div>
 
-    <el-card v-if="hits.length" class="search-results-card" shadow="never">
-      <template #header>{{ t('search.results') }}</template>
-      <div class="search-table-scroll">
-        <el-table
-          class="search-results-table"
-          :data="hits"
-          size="small"
-          border
-          height="100%"
-        >
-          <el-table-column prop="id" label="id" width="220" show-overflow-tooltip />
-          <el-table-column :label="t('search.colDistance')">
-            <template #default="{ row }">
-              {{ row.distance ?? t('common.emDash') }} / {{ row.certainty ?? t('common.emDash') }}
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('search.colProps')">
-            <template #default="{ row }">
-              <pre class="cell-json">{{ JSON.stringify(row.properties, null, 2) }}</pre>
-            </template>
-          </el-table-column>
-        </el-table>
+    <el-drawer
+      v-model="resultsDrawerVisible"
+      class="search-results-drawer"
+      :title="t('search.results')"
+      direction="rtl"
+      size="50vw"
+      append-to-body
+      :close-on-click-modal="true"
+    >
+      <div class="search-drawer-body">
+        <div v-if="searching" class="search-drawer-loading">
+          <el-icon class="is-loading search-drawer-loading-icon"><Loading /></el-icon>
+          <span class="muted">{{ t('common.loading') }}</span>
+        </div>
+        <template v-else>
+          <el-table
+            v-if="hits.length"
+            class="search-results-table"
+            :data="hits"
+            size="small"
+            border
+            height="100%"
+          >
+            <el-table-column prop="id" label="id" width="320" show-overflow-tooltip />
+            <el-table-column
+              v-if="searchMode === 'bm25'"
+              :label="t('search.colBm25Score')"
+              width="100"
+              show-overflow-tooltip
+            >
+              <template #default="{ row }">
+                {{ row.score != null ? row.score : t('common.emDash') }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="searchMode === 'vector'"
+              :label="t('search.colVectorDistance')"
+              width="120"
+              min-width="100"
+              show-overflow-tooltip
+            >
+              <template #default="{ row }">
+                {{ formatMetric(row.distance) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="searchMode === 'vector'"
+              :label="t('search.colVectorCertainty')"
+              width="120"
+              min-width="100"
+              show-overflow-tooltip
+            >
+              <template #default="{ row }">
+                {{ formatMetric(row.certainty) }}
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('search.colProps')" min-width="360">
+              <template #default="{ row }">
+                <pre class="cell-json">{{ JSON.stringify(row.properties, null, 2) }}</pre>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else :description="t('search.noResults')" />
+        </template>
       </div>
-    </el-card>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { Loading } from '@element-plus/icons-vue'
 import { useEmbeddingStore } from '@/stores/embedding'
 import { embedTextOpenAICompatible } from '@/api/embedding'
-import { fetchClassSchema, fetchSchema, nearTextSearch, nearVectorSearch, type WeaviateClass } from '@/api/weaviate'
+import {
+  bm25Search,
+  fetchClassSchema,
+  fetchSchema,
+  nearVectorSearch,
+  type NearVectorHit,
+  type WeaviateClass,
+} from '@/api/weaviate'
 import { propertyNamesFromClass } from '@/utils/schema'
 
 const { t } = useI18n()
@@ -99,20 +176,45 @@ const classes = ref<WeaviateClass[]>([])
 const className = ref('')
 const queryText = ref('')
 const limit = ref(10)
-const useNearText = ref(false)
-const hits = ref<
-  {
-    id?: string
-    distance?: number
-    certainty?: number
-    properties: Record<string, unknown>
-  }[]
->([])
+/** bm25：倒排索引；vector：客户端嵌入 + nearVector */
+const searchMode = ref<'bm25' | 'vector'>('bm25')
+/** 当前集合 schema 中的属性名（用于 BM25 限定检索字段） */
+const bm25FieldOptions = ref<string[]>([])
+/** 选中的 BM25 检索属性；默认全选 */
+const bm25SelectedFields = ref<string[]>([])
+const resultsDrawerVisible = ref(false)
+const hits = ref<NearVectorHit[]>([])
+
+/** 展示 GraphQL `_additional` 中的 distance / certainty（与 BM25 的 score 分列） */
+function formatMetric(v: number | undefined): string {
+  if (v == null || !Number.isFinite(v)) return t('common.emDash')
+  const s = v.toFixed(6)
+  return s.replace(/\.?0+$/, '') || '0'
+}
 
 async function loadClasses() {
   classes.value = await fetchSchema()
   if (!className.value && classes.value.length) className.value = classes.value[0].class
 }
+
+watch(
+  () => className.value,
+  async (name) => {
+    bm25FieldOptions.value = []
+    bm25SelectedFields.value = []
+    if (!name) return
+    try {
+      const cls = await fetchClassSchema(name)
+      const names = propertyNamesFromClass(cls)
+      bm25FieldOptions.value = names
+      bm25SelectedFields.value = []
+    } catch {
+      bm25FieldOptions.value = []
+      bm25SelectedFields.value = []
+    }
+  },
+  { immediate: true },
+)
 
 async function testEmbed() {
   if (!emb.baseURL.trim() || !emb.model.trim() || !emb.apiKey.trim()) {
@@ -146,29 +248,41 @@ async function runSearch() {
     ElMessage.warning(t('search.enterQuery'))
     return
   }
+  if (
+    searchMode.value === 'bm25' &&
+    bm25FieldOptions.value.length > 0 &&
+    bm25SelectedFields.value.length === 0
+  ) {
+    ElMessage.warning(t('search.pickBm25Property'))
+    return
+  }
+  if (
+    searchMode.value === 'vector' &&
+    (!emb.baseURL.trim() || !emb.model.trim() || !emb.apiKey.trim())
+  ) {
+    ElMessage.error(t('search.needEmbedVector'))
+    return
+  }
+  resultsDrawerVisible.value = true
   searching.value = true
   hits.value = []
   try {
     const cls = await fetchClassSchema(className.value)
     const props = propertyNamesFromClass(cls)
 
-    if (useNearText.value) {
-      try {
-        hits.value = await nearTextSearch(className.value, queryText.value.trim(), limit.value, props)
-        return
-      } catch (e: unknown) {
-        ElMessage.warning(
-          t('search.nearTextWarn', {
-            msg: e instanceof Error ? e.message : 'unknown',
-          }),
-        )
-      }
-    }
-
-    if (!emb.baseURL.trim() || !emb.model.trim() || !emb.apiKey.trim()) {
-      ElMessage.error(t('search.needEmbed'))
+    if (searchMode.value === 'bm25') {
+      const bm25Props =
+        bm25SelectedFields.value.length > 0 ? bm25SelectedFields.value : undefined
+      hits.value = await bm25Search(
+        className.value,
+        queryText.value.trim(),
+        limit.value,
+        props,
+        bm25Props,
+      )
       return
     }
+
     const { vector } = await embedTextOpenAICompatible({
       baseURL: emb.baseURL.trim(),
       apiKey: emb.apiKey.trim(),
@@ -193,7 +307,7 @@ onMounted(() => loadClasses())
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .search-top {
@@ -205,32 +319,44 @@ onMounted(() => loadClasses())
   font-size: 18px;
 }
 
-.search-results-card {
+.search-drawer-body {
   flex: 1;
   min-height: 0;
-  margin-top: 16px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
 }
 
-.search-results-card :deep(.el-card__body) {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+.search-drawer-loading {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 16px;
+  color: var(--wc-muted);
 }
 
-.search-table-scroll {
+.search-drawer-loading-icon {
+  font-size: 28px;
+  color: var(--wc-accent);
+}
+
+.search-results-table {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
 }
 
 .search-results-table :deep(table) {
   table-layout: fixed;
   width: 100%;
+}
+
+.mode-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .dim {
@@ -243,5 +369,23 @@ onMounted(() => loadClasses())
   font-size: 11px;
   white-space: pre-wrap;
   word-break: break-word;
+}
+</style>
+
+<!-- 抽屉挂载到 body，需非 scoped 才能作用到 .el-drawer__body -->
+<style>
+.search-results-drawer.el-drawer {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-results-drawer.el-drawer .el-drawer__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 16px 16px;
+  box-sizing: border-box;
 }
 </style>

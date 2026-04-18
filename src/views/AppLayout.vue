@@ -34,15 +34,14 @@
           />
           <el-scrollbar class="menu-scroll">
             <el-menu
+              :key="menuRemountKey"
               :default-active="activeMenu"
+              :default-openeds="openSubmenus"
               router
               class="aside-menu"
             >
-              <el-menu-item index="/app/cluster">
-                <span>{{ t('nav.cluster') }}</span>
-              </el-menu-item>
-              <el-menu-item index="/app/search">
-                <span>{{ t('nav.search') }}</span>
+              <el-menu-item index="/app/overview">
+                <span>{{ t('nav.overview') }}</span>
               </el-menu-item>
               <el-sub-menu index="collections">
                 <template #title>{{ t('nav.collections') }}</template>
@@ -54,6 +53,15 @@
                   <span class="cls-name">{{ c.class }}</span>
                 </el-menu-item>
                 <el-empty v-if="!filteredClasses.length" :description="t('nav.noCollections')" :image-size="64" />
+              </el-sub-menu>
+              <el-sub-menu index="ops">
+                <template #title>{{ t('nav.operations') }}</template>
+                <el-menu-item index="/app/search">
+                  <span>{{ t('nav.vectorSearch') }}</span>
+                </el-menu-item>
+                <el-menu-item index="/app/ops/migration">
+                  <span>{{ t('nav.dataMigration') }}</span>
+                </el-menu-item>
               </el-sub-menu>
             </el-menu>
           </el-scrollbar>
@@ -169,18 +177,30 @@ const filteredClasses = computed(() => {
   return classes.value.filter((c) => c.class.toLowerCase().includes(q))
 })
 
+/** 与 default-openeds 同步，子菜单展开状态随路由切换时重建侧栏菜单 */
+const openSubmenus = computed(() => {
+  const p = route.path
+  const ids: string[] = []
+  if (p.startsWith('/app/collections/')) ids.push('collections')
+  if (p.startsWith('/app/search') || p.startsWith('/app/ops/')) ids.push('ops')
+  return ids
+})
+
+const menuRemountKey = computed(() => openSubmenus.value.join('|'))
+
 const activeMenu = computed(() => {
   const p = route.path
   if (p.startsWith('/app/search')) return '/app/search'
+  if (p.startsWith('/app/ops/migration')) return '/app/ops/migration'
   const m = p.match(/^\/app\/collections\/([^/]+)/)
   if (m) return `/app/collections/${m[1]}`
   return p
 })
 
-/** 集群 / 检索 / 集合各子页：主区域不整体滚动，由子页内部（表格等）滚动 */
+/** 概览 / 向量检索 / 集合各子页：主区域不整体滚动，由子页内部（表格等）滚动 */
 const mainScrollFill = computed(() => {
   const n = route.name
-  if (n === 'cluster' || n === 'search') return true
+  if (n === 'overview' || n === 'search') return true
   return typeof n === 'string' && n.startsWith('collection-')
 })
 

@@ -146,6 +146,10 @@ html[data-theme='sunshine'] .el-overlay-message-box {
   background-color: rgba(15, 23, 42, 0.35) !important;
 }
 
+html[data-theme='sunshine'] .el-overlay-message-box:has(.wc-migration-confirm-msgbox) {
+  background-color: transparent !important;
+}
+
 /**
  * Element Plus 全局主色链：与当前主题的 --wc-accent 对齐。
  * 影响 type="primary" 按钮、文字按钮、链接、默认按钮的 hover 强调色、输入框 focus 等。
@@ -394,7 +398,8 @@ html[data-theme] .cell-json {
 }
 
 /*
- * 默认按钮：以当前主题强调色为底/边/字色。
+ * 默认按钮（项目规范）：与 API 迁移等页一致 — 不写 type="primary"，见 .cursor/skills/weaviate-vue-client/SKILL.md §10.8。
+ * 以当前主题强调色为底/边/字色。
  * Element Plus 在未写 type 时不会生成 .el-button--default，需用 :not() 一并命中。
  */
 html[data-theme] .el-button--default,
@@ -634,6 +639,58 @@ html[data-theme] .el-message-box {
 
 html[data-theme] .el-overlay-message-box {
   background-color: color-mix(in srgb, var(--wc-bg) 65%, #000) !important;
+}
+
+/* API 迁移「启动正式迁移」确认框：面板与遮罩透明，仅保留边框便于辨认区域 */
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: 1px solid var(--wc-border) !important;
+}
+
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox .el-message-box__header,
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox .el-message-box__content,
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox .el-message-box__btns {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+html[data-theme] .el-overlay-message-box:has(.wc-migration-confirm-msgbox) {
+  background-color: transparent !important;
+}
+
+/* API 迁移确认框：「确定」沿用全局默认按钮视觉（EP 仍带 .el-button--primary，此处覆盖为与主内容区默认按钮一致） */
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox .el-message-box__btns .el-button--primary {
+  --el-button-bg-color: color-mix(in srgb, var(--wc-accent) 14%, var(--wc-surface));
+  --el-button-border-color: color-mix(in srgb, var(--wc-accent) 65%, var(--wc-border));
+  --el-button-text-color: var(--wc-accent);
+  --el-button-hover-bg-color: color-mix(in srgb, var(--wc-accent) 38%, var(--wc-surface));
+  --el-button-hover-border-color: var(--wc-accent);
+  --el-button-hover-text-color: var(--wc-text);
+  --el-button-disabled-bg-color: color-mix(in srgb, var(--wc-surface-elevated) 48%, transparent);
+  --el-button-disabled-border-color: var(--wc-border);
+  --el-button-disabled-text-color: var(--wc-muted);
+  background-color: var(--el-button-bg-color) !important;
+  color: var(--el-button-text-color) !important;
+  border-color: var(--el-button-border-color) !important;
+}
+
+html[data-theme]
+  .el-message-box.wc-migration-confirm-msgbox
+  .el-message-box__btns
+  .el-button--primary:not(.is-disabled):hover,
+html[data-theme]
+  .el-message-box.wc-migration-confirm-msgbox
+  .el-message-box__btns
+  .el-button--primary:not(.is-disabled):focus-visible,
+html[data-theme]
+  .el-message-box.wc-migration-confirm-msgbox
+  .el-message-box__btns
+  .el-button--primary:not(.is-disabled):active {
+  background-color: var(--el-button-hover-bg-color) !important;
+  border-color: var(--el-button-hover-border-color) !important;
+  color: var(--el-button-hover-text-color) !important;
 }
 
 html[data-theme] .el-dialog {
