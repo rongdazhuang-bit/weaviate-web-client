@@ -17,6 +17,7 @@
       </el-timeline>
       <p class="muted hint hint--last">{{ t('migration.backupGuide.hint') }}</p>
       <div class="migration-actions">
+        <el-button @click="onStartBackup">{{ t('migration.backupGuide.btnStartBackup') }}</el-button>
         <el-button @click="goBackToDataMigration">{{ t('migration.backLabel') }}</el-button>
       </div>
     </el-card>
@@ -33,6 +34,10 @@ const router = useRouter()
 
 function goBackToDataMigration() {
   void router.push({ name: 'data-migration' })
+}
+
+function onStartBackup() {
+  void router.push({ name: 'migration-backup-run' })
 }
 
 const backupSteps = computed(() => [

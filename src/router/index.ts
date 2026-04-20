@@ -57,6 +57,16 @@ const router = createRouter({
           component: () => import('@/views/MigrationBackupGuideView.vue'),
         },
         {
+          path: 'ops/migration/backup/run',
+          name: 'migration-backup-run',
+          component: () => import('@/views/MigrationBackupRunView.vue'),
+        },
+        {
+          path: 'ops/migration/restore/run',
+          name: 'migration-restore-run',
+          component: () => import('@/views/MigrationRestoreRunView.vue'),
+        },
+        {
           path: 'ops/migration/restore',
           name: 'migration-restore',
           component: () => import('@/views/MigrationRestoreGuideView.vue'),
