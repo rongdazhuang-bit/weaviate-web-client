@@ -5,7 +5,15 @@
         <div class="app-mark" aria-hidden="true">W</div>
         <div class="app-titles">
           <div class="app-name">{{ t('app.title') }}</div>
-          <div class="app-sub">{{ t('app.subtitle') }}</div>
+          <div class="app-sub-row">
+            <span class="app-sub">{{ t('app.subtitle') }}</span>
+            <template v-if="conn.connectionUrl">
+              <span class="app-sub-sep" aria-hidden="true">·</span>
+              <el-tooltip :content="conn.connectionUrl" placement="bottom" effect="dark">
+                <span class="app-sub-url">{{ conn.connectionUrl }}</span>
+              </el-tooltip>
+            </template>
+          </div>
         </div>
       </div>
       <div class="topbar-right">
@@ -80,11 +88,26 @@
           class="main-scroll"
           :class="{ 'main-scroll--fill': mainScrollFill }"
         >
-          <router-view v-slot="{ Component }">
-            <keep-alive :include="[]">
-              <component :is="Component" />
-            </keep-alive>
-          </router-view>
+          <el-breadcrumb
+            v-if="showBreadcrumb"
+            class="main-breadcrumb"
+            separator="/"
+          >
+            <el-breadcrumb-item
+              v-for="(item, i) in breadcrumbItems"
+              :key="i"
+              :to="item.to"
+            >
+              {{ item.label }}
+            </el-breadcrumb-item>
+          </el-breadcrumb>
+          <div class="main-router-body">
+            <router-view v-slot="{ Component }">
+              <keep-alive :include="[]">
+                <component :is="Component" />
+              </keep-alive>
+            </router-view>
+          </div>
         </div>
       </el-main>
     </el-container>
@@ -93,7 +116,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useConnectionStore } from '@/stores/connection'
@@ -197,11 +220,88 @@ const activeMenu = computed(() => {
   return p
 })
 
-/** 概览 / 向量检索 / 集合各子页：主区域不整体滚动，由子页内部（表格等）滚动 */
+/** 概览 / 向量检索 / 集合各子页 / 备份·恢复执行页：主区域不整体滚动，由子页内部滚动 */
 const mainScrollFill = computed(() => {
   const n = route.name
   if (n === 'overview' || n === 'search') return true
+  if (n === 'migration-backup-run' || n === 'migration-restore-run') return true
   return typeof n === 'string' && n.startsWith('collection-')
+})
+
+type BreadcrumbItem = { label: string; to?: RouteLocationRaw }
+
+const showBreadcrumb = computed(() => route.name !== 'overview')
+
+const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+  const n = route.name
+  if (n === 'overview') return []
+
+  const opsCrumb: BreadcrumbItem = { label: t('nav.operations') }
+  const migrationHub: BreadcrumbItem = {
+    label: t('migration.title'),
+    to: { name: 'data-migration' },
+  }
+
+  if (n === 'search') {
+    return [opsCrumb, { label: t('search.title') }]
+  }
+
+  if (typeof n === 'string' && n.startsWith('collection-')) {
+    const raw = route.params.name as string
+    const displayName = decodeURIComponent(raw)
+    const collectionBase: RouteLocationRaw = {
+      name: 'collection-overview',
+      params: { name: raw },
+    }
+    let tabLabel = t('collection.tabOverview')
+    if (n === 'collection-folders') tabLabel = t('collection.tabFolders')
+    if (n === 'collection-objects') tabLabel = t('collection.tabObjects')
+    return [
+      { label: t('nav.collections') },
+      { label: displayName, to: collectionBase },
+      { label: tabLabel },
+    ]
+  }
+
+  switch (n) {
+    case 'data-migration':
+      return [opsCrumb, { label: t('migration.title') }]
+    case 'migration-backup':
+      return [opsCrumb, migrationHub, { label: t('migration.backupGuide.title') }]
+    case 'migration-backup-run':
+      return [
+        opsCrumb,
+        migrationHub,
+        {
+          label: t('migration.backupGuide.title'),
+          to: { name: 'migration-backup' },
+        },
+        { label: t('migration.backupRun.title') },
+      ]
+    case 'migration-restore':
+      return [opsCrumb, migrationHub, { label: t('migration.restoreGuide.title') }]
+    case 'migration-restore-run':
+      return [
+        opsCrumb,
+        migrationHub,
+        {
+          label: t('migration.restoreGuide.title'),
+          to: { name: 'migration-restore' },
+        },
+        { label: t('migration.restoreRun.title') },
+      ]
+    case 'migration-api':
+      return [opsCrumb, migrationHub, { label: t('migration.apiGuide.title') }]
+    case 'migration-api-run':
+      return [
+        opsCrumb,
+        migrationHub,
+        { label: t('migration.apiGuide.title'), to: { name: 'migration-api' } },
+        { label: t('apiMigration.title') },
+      ]
+    default:
+      return []
+  }
 })
 
 async function reloadClasses() {
@@ -234,7 +334,7 @@ onUnmounted(() => {
 
 <style scoped>
 .shell {
-  height: 100vh;
+  height: 100%;
   min-height: 0;
   background: var(--wc-bg);
   flex-direction: column;
@@ -255,7 +355,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 220px;
+  min-width: 0;
+  flex: 1;
 }
 
 .app-mark {
@@ -274,6 +375,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
 
 .app-name {
@@ -283,10 +386,36 @@ onUnmounted(() => {
   line-height: 1.2;
 }
 
-.app-sub {
+.app-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   font-size: 12px;
-  color: var(--wc-muted);
   line-height: 1.2;
+}
+
+.app-sub {
+  flex-shrink: 0;
+  color: var(--wc-muted);
+}
+
+.app-sub-sep {
+  flex-shrink: 0;
+  color: var(--wc-muted);
+  opacity: 0.55;
+}
+
+.app-sub-url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wc-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  cursor: default;
 }
 
 .topbar-right {
@@ -458,8 +587,43 @@ onUnmounted(() => {
   flex-direction: column;
 }
 
+.main-breadcrumb {
+  flex-shrink: 0;
+  margin-bottom: 14px;
+}
+
+:deep(.main-breadcrumb.el-breadcrumb) {
+  --el-text-color-regular: var(--wc-muted);
+  --el-text-color-primary: var(--wc-text);
+}
+
+:deep(.main-breadcrumb .el-breadcrumb__inner.is-link) {
+  color: var(--wc-accent);
+  font-weight: 500;
+}
+
+:deep(.main-breadcrumb .el-breadcrumb__inner.is-link:hover) {
+  color: color-mix(in srgb, var(--wc-accent) 85%, #fff);
+}
+
+:deep(.main-breadcrumb .el-breadcrumb__separator) {
+  color: var(--wc-muted);
+}
+
+.main-router-body {
+  min-height: 0;
+}
+
 /* 子页面根节点撑满高度，便于内部仅表格区域滚动 */
-.main-scroll--fill > * {
+.main-scroll--fill > .main-router-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-scroll--fill > .main-router-body > * {
   flex: 1;
   min-height: 0;
   overflow: hidden;

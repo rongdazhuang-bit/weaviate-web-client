@@ -426,3 +426,97 @@ export async function nearTextSearch(
     }
   })
 }
+
+export type WeaviateBackupBackend = 'filesystem' | 's3'
+
+/**
+ * 发起备份：`baseURL` 为当前登录连接的 Weaviate 根地址时，请求即为
+ * `POST …/v1/backups/filesystem` 或 `POST …/v1/backups/s3`。
+ * Body 含 `id`；`include` 仅在传入非空数组时附加（「全部集合」不传）。
+ */
+export async function createBackupRequest(
+  backend: WeaviateBackupBackend,
+  backupId: string,
+  client: AxiosInstance = createWeaviateAxios(),
+  opts?: { include?: string[] },
+): Promise<unknown> {
+  const path = `/v1/backups/${encodeURIComponent(backend)}`
+  const body: { id: string; include?: string[] } = { id: backupId }
+  if (opts?.include?.length) body.include = [...opts.include]
+  const { data, status } = await client.post(path, body)
+  if (status < 200 || status >= 300) {
+    const errBody =
+      data && typeof data === 'object' && data !== null && 'error' in data
+        ? JSON.stringify((data as { error?: unknown }).error ?? data)
+        : JSON.stringify(data)
+    throw new Error(`HTTP ${status}: ${errBody}`)
+  }
+  return data
+}
+
+/**
+ * 备份为异步任务；通过状态查询端点轮询进度。
+ * GET `/v1/backups/{backend}/{backup_id}`（`backup_id` 即创建时使用的 `id`）
+ * 响应中 `status` 常见取值：`STARTED`、`TRANSFERRING`、`SUCCESS`、`FAILED`。
+ */
+export interface WeaviateBackupCreateStatus {
+  status?: string
+  id?: string
+  backend?: string
+  error?: unknown
+  [key: string]: unknown
+}
+
+export async function fetchBackupCreateStatus(
+  backend: WeaviateBackupBackend,
+  backupId: string,
+  client: AxiosInstance = createWeaviateAxios(),
+): Promise<WeaviateBackupCreateStatus> {
+  const path = `/v1/backups/${encodeURIComponent(backend)}/${encodeURIComponent(backupId)}`
+  const { data, status } = await client.get<unknown>(path)
+  if (status !== 200) throw new Error(`backup status HTTP ${status}`)
+  if (!data || typeof data !== 'object') return {}
+  return data as WeaviateBackupCreateStatus
+}
+
+/** 恢复请求额外选项（嵌套于 Body `config`，与 Weaviate `RestoreConfig` 对齐，以服务端实际支持为准） */
+export interface RestoreRequestOptions {
+  /** 为 true 时请求体带 `config: { overwriteExistingClasses: true }`，用于覆盖目标端已存在的同名 class */
+  overwriteExistingClasses?: boolean
+}
+
+/** 发起恢复：`POST /v1/backups/{backend}/{backup_id}/restore` */
+export async function createRestoreRequest(
+  backend: WeaviateBackupBackend,
+  backupId: string,
+  client: AxiosInstance,
+  opts?: RestoreRequestOptions,
+): Promise<unknown> {
+  const path = `/v1/backups/${encodeURIComponent(backend)}/${encodeURIComponent(backupId)}/restore`
+  const body: Record<string, unknown> = {}
+  if (opts?.overwriteExistingClasses) {
+    body.config = { overwriteExistingClasses: true }
+  }
+  const { data, status } = await client.post(path, body)
+  if (status < 200 || status >= 300) {
+    const errBody =
+      data && typeof data === 'object' && data !== null && 'error' in data
+        ? JSON.stringify((data as { error?: unknown }).error ?? data)
+        : JSON.stringify(data)
+    throw new Error(`HTTP ${status}: ${errBody}`)
+  }
+  return data
+}
+
+/** `GET /v1/backups/{backend}/{backup_id}/restore` — 查询恢复进度（字段与备份异步任务类似，含 `status`） */
+export async function fetchRestoreCreateStatus(
+  backend: WeaviateBackupBackend,
+  backupId: string,
+  client: AxiosInstance,
+): Promise<WeaviateBackupCreateStatus> {
+  const path = `/v1/backups/${encodeURIComponent(backend)}/${encodeURIComponent(backupId)}/restore`
+  const { data, status } = await client.get<unknown>(path)
+  if (status !== 200) throw new Error(`restore status HTTP ${status}`)
+  if (!data || typeof data !== 'object') return {}
+  return data as WeaviateBackupCreateStatus
+}

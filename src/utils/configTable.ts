@@ -14,9 +14,9 @@ export function configObjectToRows(obj: unknown): ConfigTableRow[] {
 }
 
 function formatConfigValue(v: unknown): string {
-  if (v === null || v === undefined) return '—'
-  if (typeof v === 'boolean') return v ? '是' : '否'
-  if (typeof v === 'number') return String(v)
+  if (v === null) return 'null'
+  if (v === undefined) return 'undefined'
+  if (typeof v === 'boolean' || typeof v === 'number') return String(v)
   if (typeof v === 'string') return v
   return JSON.stringify(v, null, 2)
 }

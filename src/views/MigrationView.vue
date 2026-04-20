@@ -1,9 +1,6 @@
 <template>
   <div class="page api-migration-page">
-    <div class="api-migration-head">
-      <MigrationBackButton />
-      <h2 class="title">{{ t('apiMigration.title') }}</h2>
-    </div>
+    <h2 class="title">{{ t('apiMigration.title') }}</h2>
     <p class="muted lead">{{ t('apiMigration.lead') }}</p>
 
     <el-card shadow="never" class="migration-form-card">
@@ -30,22 +27,31 @@
               </el-radio-group>
             </el-form-item>
             <el-form-item v-if="scopeMode === 'pick'" :label="t('apiMigration.classesLabel')">
-              <el-select
-                v-model="pickedClasses"
-                multiple
-                filterable
-                collapse-tags
-                collapse-tags-tooltip
-                :placeholder="t('apiMigration.classesPlaceholder')"
-                style="width: 100%"
-              >
-                <el-option v-for="c in sourceClassOptions" :key="c" :label="c" :value="c" />
-              </el-select>
-            </el-form-item>
-            <el-form-item v-if="scopeMode === 'pick'">
-              <el-button :loading="loadingClasses" @click="loadSourceClasses">
-                {{ t('apiMigration.reloadClasses') }}
-              </el-button>
+              <div class="class-select-row">
+                <el-select
+                  v-model="pickedClasses"
+                  multiple
+                  filterable
+                  collapse-tags
+                  collapse-tags-tooltip
+                  class="class-select"
+                  :placeholder="t('apiMigration.classesPlaceholder')"
+                  :disabled="migrating"
+                >
+                  <el-option v-for="c in sourceClassOptions" :key="c" :label="c" :value="c" />
+                </el-select>
+                <el-tooltip :content="t('apiMigration.refreshClasses')" placement="top">
+                  <el-button
+                    :loading="loadingClasses"
+                    :disabled="migrating"
+                    circle
+                    class="refresh-classes-btn"
+                    @click="() => loadSourceClasses()"
+                  >
+                    <el-icon><Refresh /></el-icon>
+                  </el-button>
+                </el-tooltip>
+              </div>
             </el-form-item>
           </el-form>
         </el-col>
@@ -80,6 +86,9 @@
       <div class="actions">
         <el-button :loading="validating || migrating" :disabled="migrating" @click="onStartClick">
           {{ t('apiMigration.startBtn') }}
+        </el-button>
+        <el-button :disabled="migrating" @click="goBackToDataMigration">
+          {{ t('migration.backLabel') }}
         </el-button>
       </div>
     </el-card>
@@ -116,8 +125,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import MigrationBackButton from '@/components/MigrationBackButton.vue'
+import { Refresh } from '@element-plus/icons-vue'
 import { areSameWeaviateEndpoints, normalizeConnectionUrl } from '@/utils/connectionUrl'
 import { fetchRemoteSchema, createWeaviateClientForUrl } from '@/api/weaviateRemote'
 import {
@@ -129,6 +139,11 @@ import {
 } from '@/api/migration'
 
 const { t } = useI18n()
+const router = useRouter()
+
+function goBackToDataMigration() {
+  void router.push({ name: 'data-migration' })
+}
 
 const sourceUrl = ref('')
 const sourceKey = ref('')
@@ -149,7 +164,7 @@ function scheduleAutoLoadSourceClasses() {
     pickClassLoadTimer = undefined
     if (scopeMode.value !== 'pick') return
     if (!normalizeConnectionUrl(sourceUrl.value)) return
-    void loadSourceClasses()
+    void loadSourceClasses({ quiet: true })
   }, 350)
 }
 
@@ -209,7 +224,7 @@ function buildConfig(): ApiMigrationConfig | null {
   }
 }
 
-async function loadSourceClasses() {
+async function loadSourceClasses(opts?: { quiet?: boolean }) {
   if (!normalizeConnectionUrl(sourceUrl.value)) {
     ElMessage.warning(t('apiMigration.errSourceUrl'))
     return
@@ -219,7 +234,9 @@ async function loadSourceClasses() {
     const client = createWeaviateClientForUrl(sourceUrl.value.trim(), sourceKey.value)
     const classes = await fetchRemoteSchema(client)
     sourceClassOptions.value = classes.map((c) => c.class).sort()
-    ElMessage.success(t('apiMigration.loadClassesOk', { n: sourceClassOptions.value.length }))
+    if (!opts?.quiet) {
+      ElMessage.success(t('apiMigration.loadClassesOk', { n: sourceClassOptions.value.length }))
+    }
   } catch (e: unknown) {
     ElMessage.error(e instanceof Error ? e.message : t('apiMigration.loadClassesFail'))
     sourceClassOptions.value = []
@@ -304,17 +321,8 @@ function onProgressClosed() {
   max-width: 960px;
 }
 
-.api-migration-head {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-bottom: 8px;
-}
-
 .title {
-  margin: 0;
+  margin: 0 0 8px;
   font-size: 18px;
 }
 
@@ -353,6 +361,22 @@ function onProgressClosed() {
   gap: 8px;
 }
 
+.class-select-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.class-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.refresh-classes-btn {
+  flex-shrink: 0;
+}
+
 .mode-block {
   margin-top: 20px;
   padding-top: 16px;
@@ -363,6 +387,9 @@ function onProgressClosed() {
   margin-top: 22px;
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .progress-body {
