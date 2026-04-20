@@ -1,9 +1,6 @@
 <template>
   <div class="page page-migration-guide">
-    <div class="guide-head">
-      <MigrationBackButton />
-      <h2 class="title">{{ t('migration.apiGuide.title') }}</h2>
-    </div>
+    <h2 class="title">{{ t('migration.apiGuide.title') }}</h2>
     <p class="muted lead">{{ t('migration.apiGuide.lead') }}</p>
 
     <el-card shadow="never" class="guide-card">
@@ -20,6 +17,7 @@
       </el-timeline>
       <div class="migration-actions">
         <el-button @click="goRun">{{ t('apiMigration.openConfig') }}</el-button>
+        <el-button @click="goBackToDataMigration">{{ t('migration.backLabel') }}</el-button>
       </div>
     </el-card>
   </div>
@@ -29,13 +27,15 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import MigrationBackButton from '@/components/MigrationBackButton.vue'
-
 const router = useRouter()
 const { t } = useI18n()
 
 function goRun() {
-  router.push({ name: 'migration-api-run' })
+  void router.push({ name: 'migration-api-run' })
+}
+
+function goBackToDataMigration() {
+  void router.push({ name: 'data-migration' })
 }
 
 const apiSteps = computed(() => [
@@ -50,14 +50,6 @@ const apiSteps = computed(() => [
 <style scoped>
 .page-migration-guide {
   max-width: 720px;
-}
-
-.guide-head {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
 }
 
 .title {
@@ -101,5 +93,9 @@ const apiSteps = computed(() => [
 
 .migration-actions {
   margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 </style>

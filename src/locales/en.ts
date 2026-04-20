@@ -141,7 +141,6 @@ export default {
     btnBackup: 'Backup',
     btnRestore: 'Restore',
     btnApiMigration: 'API migration',
-    backChevronAria: 'Back to data migration',
     backLabel: 'Back',
     backupGuide: {
       title: 'Backup guide',
@@ -183,7 +182,7 @@ export default {
       s4Title: 'Verify & retry',
       s4Desc: 'Compare counts, spot-check vector search, and retry failed batches.',
     },
-    clientSection: 'Clients & bulk operations',
+    clientSection: 'Data migration',
     clientBody:
       'You can also use language SDKs or HTTP/GraphQL to export from the source and import to the target; mind rate limits and batch sizes at scale.',
     docsClient: 'Weaviate client libraries',

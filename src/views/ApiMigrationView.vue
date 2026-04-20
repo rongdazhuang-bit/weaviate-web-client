@@ -1,9 +1,6 @@
 <template>
   <div class="page api-migration-page">
-    <div class="api-migration-head">
-      <MigrationBackButton />
-      <h2 class="title">{{ t('apiMigration.title') }}</h2>
-    </div>
+    <h2 class="title">{{ t('apiMigration.title') }}</h2>
     <p class="muted lead">{{ t('apiMigration.lead') }}</p>
 
     <el-card shadow="never" class="migration-form-card">
@@ -81,6 +78,9 @@
         <el-button :loading="validating || migrating" :disabled="migrating" @click="onStartClick">
           {{ t('apiMigration.startBtn') }}
         </el-button>
+        <el-button :disabled="migrating" @click="goBackToDataMigration">
+          {{ t('migration.backLabel') }}
+        </el-button>
       </div>
     </el-card>
 
@@ -116,8 +116,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import MigrationBackButton from '@/components/MigrationBackButton.vue'
 import { areSameWeaviateEndpoints, normalizeConnectionUrl } from '@/utils/connectionUrl'
 import { fetchRemoteSchema, createWeaviateClientForUrl } from '@/api/weaviateRemote'
 import {
@@ -129,6 +129,11 @@ import {
 } from '@/api/apiMigration'
 
 const { t } = useI18n()
+const router = useRouter()
+
+function goBackToDataMigration() {
+  void router.push({ name: 'data-migration' })
+}
 
 const sourceUrl = ref('')
 const sourceKey = ref('')
@@ -304,17 +309,8 @@ function onProgressClosed() {
   max-width: 960px;
 }
 
-.api-migration-head {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-bottom: 8px;
-}
-
 .title {
-  margin: 0;
+  margin: 0 0 8px;
   font-size: 18px;
 }
 
@@ -363,6 +359,9 @@ function onProgressClosed() {
   margin-top: 22px;
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .progress-body {

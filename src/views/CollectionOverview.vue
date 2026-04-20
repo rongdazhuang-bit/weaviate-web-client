@@ -2,11 +2,9 @@
   <div class="page">
     <el-card shadow="never">
       <template #header>
-        <span>{{ t('collection.schema') }}</span>
-        <el-tag v-if="count !== null" class="ml" type="info">{{
-          t('collection.objectCount', { n: count })
-        }}</el-tag>
-        <el-tag v-else class="ml" type="warning">{{ t('collection.objectCountUnknown') }}</el-tag>
+        <span>Schema</span>
+        <el-tag v-if="count !== null" class="ml" type="info">Objects: {{ count }}</el-tag>
+        <el-tag v-else class="ml" type="warning">Objects: N/A</el-tag>
         <el-button
           size="small"
           class="ml wc-overview-refresh"
@@ -34,23 +32,27 @@
           border
           size="small"
         >
-          <el-descriptions-item :label="t('collection.desc')">{{
-            cls.description || t('common.emDash')
+          <el-descriptions-item label="description">{{
+            cls.description || '—'
           }}</el-descriptions-item>
-          <el-descriptions-item :label="t('collection.vectorizer')">{{
-            cls.vectorizer || t('common.emDash')
+          <el-descriptions-item label="vectorizer">{{
+            cls.vectorizer || '—'
           }}</el-descriptions-item>
-          <el-descriptions-item :label="t('collection.vectorIndexType')">{{
-            cls.vectorIndexType || t('common.emDash')
+          <el-descriptions-item label="vectorIndexType">{{
+            cls.vectorIndexType || '—'
           }}</el-descriptions-item>
-          <el-descriptions-item :label="t('collection.tenant')">
-            {{ cls.multiTenancyConfig?.enabled ? t('common.yes') : t('common.no') }}
+          <el-descriptions-item label="multiTenancyConfig.enabled">
+            {{
+              cls.multiTenancyConfig == null
+                ? '—'
+                : String(cls.multiTenancyConfig.enabled)
+            }}
           </el-descriptions-item>
         </el-descriptions>
-        <el-empty v-else :description="t('collection.loadSchemaFailed')" />
+        <el-empty v-else description="Failed to load schema" />
         <el-divider />
         <template v-if="cls?.properties?.length">
-          <h4 class="h4">{{ t('collection.propsTitle') }}</h4>
+          <h4 class="h4">properties</h4>
           <el-table
             class="properties-detail-table"
             :data="cls.properties"
@@ -72,10 +74,10 @@
             </el-table-column>
           </el-table>
         </template>
-        <el-empty v-else-if="cls" :description="t('collection.noProps')" />
+        <el-empty v-else-if="cls" description="(no properties)" />
 
         <div class="config-section">
-          <h4 class="h4">{{ t('collection.replication') }}</h4>
+          <h4 class="h4">replicationConfig</h4>
           <el-table
             v-if="replicationRows.length"
             class="collection-config-table"
@@ -86,24 +88,24 @@
           >
             <el-table-column
               prop="key"
-              :label="t('collection.colField')"
+              label="key"
               min-width="200"
               width="240"
               show-overflow-tooltip
             />
             <el-table-column
               prop="value"
-              :label="t('collection.colValue')"
+              label="value"
               min-width="280"
               class-name="wc-config-value-cell"
               show-overflow-tooltip
             />
           </el-table>
-          <el-empty v-else :description="t('collection.noReplication')" />
+          <el-empty v-else description="(no replicationConfig)" />
         </div>
 
         <div class="config-section">
-          <h4 class="h4">{{ t('collection.sharding') }}</h4>
+          <h4 class="h4">shardingConfig</h4>
           <el-table
             v-if="shardingRows.length"
             class="collection-config-table"
@@ -114,24 +116,24 @@
           >
             <el-table-column
               prop="key"
-              :label="t('collection.colField')"
+              label="key"
               min-width="200"
               width="240"
               show-overflow-tooltip
             />
             <el-table-column
               prop="value"
-              :label="t('collection.colValue')"
+              label="value"
               min-width="280"
               class-name="wc-config-value-cell"
               show-overflow-tooltip
             />
           </el-table>
-          <el-empty v-else :description="t('collection.noSharding')" />
+          <el-empty v-else description="(no shardingConfig)" />
         </div>
 
         <div class="config-section">
-          <h4 class="h4">{{ t('collection.vector') }}</h4>
+          <h4 class="h4">{{ vectorConfigSectionLabel }}</h4>
           <el-table
             v-if="vectorRows.length"
             class="collection-config-table"
@@ -142,24 +144,27 @@
           >
             <el-table-column
               prop="key"
-              :label="t('collection.colField')"
+              label="key"
               min-width="200"
               width="240"
               show-overflow-tooltip
             />
             <el-table-column
               prop="value"
-              :label="t('collection.colValue')"
+              label="value"
               min-width="280"
               class-name="wc-config-value-cell"
               show-overflow-tooltip
             />
           </el-table>
-          <el-empty v-else :description="t('collection.noVector')" />
+          <el-empty
+            v-else
+            :description="`(no ${vectorConfigSectionLabel})`"
+          />
         </div>
 
         <div class="config-section">
-          <h4 class="h4">{{ t('collection.multiTenancy') }}</h4>
+          <h4 class="h4">multiTenancyConfig</h4>
           <el-table
             v-if="multiTenancyRows.length"
             class="collection-config-table"
@@ -170,24 +175,24 @@
           >
             <el-table-column
               prop="key"
-              :label="t('collection.colField')"
+              label="key"
               min-width="200"
               width="240"
               show-overflow-tooltip
             />
             <el-table-column
               prop="value"
-              :label="t('collection.colValue')"
+              label="value"
               min-width="280"
               class-name="wc-config-value-cell"
               show-overflow-tooltip
             />
           </el-table>
-          <el-empty v-else :description="t('collection.noMultiTenancy')" />
+          <el-empty v-else description="(no multiTenancyConfig)" />
         </div>
 
         <div class="config-section">
-          <h4 class="h4">{{ t('collection.inverted') }}</h4>
+          <h4 class="h4">invertedIndexConfig</h4>
           <el-table
             v-if="invertedRows.length"
             class="collection-config-table"
@@ -198,20 +203,20 @@
           >
             <el-table-column
               prop="key"
-              :label="t('collection.colField')"
+              label="key"
               min-width="200"
               width="240"
               show-overflow-tooltip
             />
             <el-table-column
               prop="value"
-              :label="t('collection.colValue')"
+              label="value"
               min-width="280"
               class-name="wc-config-value-cell"
               show-overflow-tooltip
             />
           </el-table>
-          <el-empty v-else :description="t('collection.noInverted')" />
+          <el-empty v-else description="(no invertedIndexConfig)" />
         </div>
       </div>
     </el-card>
@@ -239,6 +244,15 @@ const count = ref<number | null>(null)
 
 const className = computed(() => decodeURIComponent(route.params.name as string))
 
+/** 与 Weaviate class JSON 字段名一致（vectorIndexConfig 与 vectorConfig 二选一） */
+const vectorConfigSectionLabel = computed(() => {
+  const c = cls.value
+  if (!c) return 'vectorIndexConfig'
+  if (c.vectorIndexConfig != null) return 'vectorIndexConfig'
+  if (c.vectorConfig != null) return 'vectorConfig'
+  return 'vectorIndexConfig'
+})
+
 const replicationRows = computed(() => configObjectToRows(cls.value?.replicationConfig))
 const shardingRows = computed(() => configObjectToRows(cls.value?.shardingConfig))
 const vectorRows = computed(() =>
@@ -257,9 +271,10 @@ const propertyDetailKeys = computed(() => {
   return keys.has('name') ? ['name', ...rest] : rest
 })
 
-/** 一级字段值：标量直接展示；对象/数组（含嵌套 JSON）整段 JSON.stringify */
+/** 一级字段值：与 API 一致直接展示（含 null / 布尔）；嵌套对象/数组用 JSON.stringify */
 function formatPropertyCellValue(v: unknown): string {
-  if (v === null || v === undefined) return t('common.emDash')
+  if (v === null) return 'null'
+  if (v === undefined) return 'undefined'
   if (typeof v === 'object') return JSON.stringify(v)
   return String(v)
 }
@@ -361,7 +376,7 @@ onMounted(() => load())
   width: 100%;
 }
 
-/* 标签列宽与下方「属性定义」表中「名称」列一致（min-width 200 / width 240） */
+/* 标签列宽与下方 properties 表列宽一致（min-width 200 / width 240） */
 .collection-schema-descriptions :deep(.el-descriptions__label) {
   width: 240px;
   max-width: 240px;

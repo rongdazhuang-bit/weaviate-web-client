@@ -1,9 +1,6 @@
 <template>
   <div class="page page-migration-guide">
-    <div class="guide-head">
-      <MigrationBackButton />
-      <h2 class="title">{{ t('migration.backupGuide.title') }}</h2>
-    </div>
+    <h2 class="title">{{ t('migration.backupGuide.title') }}</h2>
     <p class="muted lead">{{ t('migration.backupGuide.lead') }}</p>
 
     <el-card shadow="never" class="guide-card">
@@ -19,6 +16,9 @@
         </el-timeline-item>
       </el-timeline>
       <p class="muted hint hint--last">{{ t('migration.backupGuide.hint') }}</p>
+      <div class="migration-actions">
+        <el-button @click="goBackToDataMigration">{{ t('migration.backLabel') }}</el-button>
+      </div>
     </el-card>
   </div>
 </template>
@@ -26,9 +26,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import MigrationBackButton from '@/components/MigrationBackButton.vue'
+import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
+const router = useRouter()
+
+function goBackToDataMigration() {
+  void router.push({ name: 'data-migration' })
+}
 
 const backupSteps = computed(() => [
   { title: t('migration.backupGuide.s1Title'), desc: t('migration.backupGuide.s1Desc') },
@@ -42,14 +47,6 @@ const backupSteps = computed(() => [
 <style scoped>
 .page-migration-guide {
   max-width: 720px;
-}
-
-.guide-head {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
 }
 
 .title {
@@ -98,5 +95,13 @@ const backupSteps = computed(() => [
 
 .hint--last {
   margin-bottom: 0;
+}
+
+.migration-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 </style>

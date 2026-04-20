@@ -140,7 +140,6 @@ export default {
     btnBackup: '备份',
     btnRestore: '恢复',
     btnApiMigration: 'API 迁移',
-    backChevronAria: '返回数据迁移',
     backLabel: '返回',
     backupGuide: {
       title: '备份引导',
@@ -182,7 +181,7 @@ export default {
       s4Title: '校验与补数',
       s4Desc: '对比对象量、抽样校验向量检索结果；失败批次记录并重试。',
     },
-    clientSection: '客户端与批量操作',
+    clientSection: '数据迁移',
     clientBody:
       '也可使用各语言 SDK、HTTP/GraphQL 从源实例导出并在目标实例导入；大流量时注意限流与批量大小。',
     docsClient: 'Weaviate 客户端概览',
