@@ -146,6 +146,10 @@ html[data-theme='sunshine'] .el-overlay-message-box {
   background-color: rgba(15, 23, 42, 0.35) !important;
 }
 
+html[data-theme='sunshine'] .el-overlay-message-box:has(.wc-migration-confirm-msgbox) {
+  background-color: transparent !important;
+}
+
 /**
  * Element Plus 全局主色链：与当前主题的 --wc-accent 对齐。
  * 影响 type="primary" 按钮、文字按钮、链接、默认按钮的 hover 强调色、输入框 focus 等。
@@ -210,6 +214,18 @@ html[data-theme] {
 
   /* Switch：开启色与主色一致 */
   --el-switch-on-color: var(--wc-accent);
+}
+
+/**
+ * 深色主题（非 sunshine）：全屏弹层遮罩基准色。
+ * 在原先 color-mix(wc-bg 65%, #000) 上再提透约 50%（与 transparent 各半混合），仍能看出压暗但不闷。
+ */
+html[data-theme]:not([data-theme='sunshine']) {
+  --wc-overlay-scrim: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--wc-bg) 65%, #000) 50%,
+    transparent
+  );
 }
 
 /* v-loading 遮罩：EP 使用 --el-mask-color 偏浅，深色主题下改为透明，仅保留转圈 */
@@ -394,7 +410,8 @@ html[data-theme] .cell-json {
 }
 
 /*
- * 默认按钮：以当前主题强调色为底/边/字色。
+ * 默认按钮（项目规范）：与 API 迁移等页一致 — 不写 type="primary"，见 .cursor/skills/weaviate-vue-client/SKILL.md §10.8。
+ * 以当前主题强调色为底/边/字色。
  * Element Plus 在未写 type 时不会生成 .el-button--default，需用 :not() 一并命中。
  */
 html[data-theme] .el-button--default,
@@ -632,8 +649,128 @@ html[data-theme] .el-message-box {
   --el-messagebox-content-color: var(--wc-text);
 }
 
-html[data-theme] .el-overlay-message-box {
-  background-color: color-mix(in srgb, var(--wc-bg) 65%, #000) !important;
+html[data-theme]:not([data-theme='sunshine']) .el-overlay-message-box {
+  background-color: var(--wc-overlay-scrim) !important;
+}
+
+/* Dialog / Drawer 全屏遮罩（深色）：与 MessageBox 同一套 scrim（类名随 EP 版本可能为 *-modal-dialog / *-modal-drawer） */
+html[data-theme]:not([data-theme='sunshine']) .el-overlay[class*='-modal-dialog'],
+html[data-theme]:not([data-theme='sunshine']) .el-overlay[class*='-modal-drawer'] {
+  background-color: var(--wc-overlay-scrim) !important;
+}
+
+/* 集合对象：删除确认（列表与详情共用）— 浅色 sunshine：柔和半透明面板 + 浅遮罩 */
+html[data-theme='sunshine'] .el-message-box.wc-objects-delete-msgbox {
+  --el-bg-color: color-mix(in srgb, var(--wc-surface) 94%, transparent);
+  background-color: color-mix(in srgb, var(--wc-surface) 94%, transparent) !important;
+  box-shadow: var(--wc-shadow) !important;
+  border: 1px solid var(--wc-border) !important;
+}
+
+html[data-theme='sunshine'] .el-message-box.wc-objects-delete-msgbox .el-message-box__header,
+html[data-theme='sunshine'] .el-message-box.wc-objects-delete-msgbox .el-message-box__content,
+html[data-theme='sunshine'] .el-message-box.wc-objects-delete-msgbox .el-message-box__container,
+html[data-theme='sunshine'] .el-message-box.wc-objects-delete-msgbox .el-message-box__message,
+html[data-theme='sunshine'] .el-message-box.wc-objects-delete-msgbox .el-message-box__status,
+html[data-theme='sunshine'] .el-message-box.wc-objects-delete-msgbox .el-message-box__btns {
+  background-color: color-mix(in srgb, var(--wc-surface) 94%, transparent) !important;
+}
+
+html[data-theme='sunshine'] .el-overlay-message-box:has(.wc-objects-delete-msgbox),
+html[data-theme='sunshine'] .el-overlay.wc-objects-delete-msgbox-overlay {
+  background-color: rgba(15, 23, 42, 0.38) !important;
+}
+
+/* 深色预设：匀黑半透明遮罩 + 单层磨砂面板（内层透明，避免多层叠色发灰） */
+html[data-theme]:not([data-theme='sunshine']) .el-overlay-message-box:has(.wc-objects-delete-msgbox),
+html[data-theme]:not([data-theme='sunshine']) .el-overlay.wc-objects-delete-msgbox-overlay {
+  background-color: rgba(0, 0, 0, 0.26) !important;
+}
+
+html[data-theme]:not([data-theme='sunshine']) .el-message-box.wc-objects-delete-msgbox {
+  --el-bg-color: color-mix(in srgb, var(--wc-surface-elevated) 62%, transparent);
+  background-color: color-mix(in srgb, var(--wc-surface-elevated) 62%, transparent) !important;
+  backdrop-filter: blur(14px) saturate(118%);
+  -webkit-backdrop-filter: blur(14px) saturate(118%);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.55),
+    0 0 0 1px color-mix(in srgb, var(--wc-border) 55%, rgba(255, 255, 255, 0.06)) !important;
+  border: 1px solid color-mix(in srgb, var(--wc-border) 75%, var(--wc-accent) 14%) !important;
+}
+
+html[data-theme]:not([data-theme='sunshine']) .el-message-box.wc-objects-delete-msgbox .el-message-box__header,
+html[data-theme]:not([data-theme='sunshine']) .el-message-box.wc-objects-delete-msgbox .el-message-box__content,
+html[data-theme]:not([data-theme='sunshine']) .el-message-box.wc-objects-delete-msgbox .el-message-box__container,
+html[data-theme]:not([data-theme='sunshine']) .el-message-box.wc-objects-delete-msgbox .el-message-box__message,
+html[data-theme]:not([data-theme='sunshine']) .el-message-box.wc-objects-delete-msgbox .el-message-box__status,
+html[data-theme]:not([data-theme='sunshine']) .el-message-box.wc-objects-delete-msgbox .el-message-box__btns {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* API 迁移「启动正式迁移」确认框：面板与遮罩透明，仅保留边框便于辨认区域 */
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: 1px solid var(--wc-border) !important;
+}
+
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox .el-message-box__header,
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox .el-message-box__content,
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox .el-message-box__btns {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+html[data-theme] .el-overlay-message-box:has(.wc-migration-confirm-msgbox) {
+  background-color: transparent !important;
+}
+
+/* API 迁移 / 删除对象确认框：「确定」沿用全局默认按钮视觉（EP 仍带 .el-button--primary，此处覆盖为与主内容区默认按钮一致） */
+html[data-theme] .el-message-box.wc-migration-confirm-msgbox .el-message-box__btns .el-button--primary,
+html[data-theme] .el-message-box.wc-objects-delete-msgbox .el-message-box__btns .el-button--primary {
+  --el-button-bg-color: color-mix(in srgb, var(--wc-accent) 14%, var(--wc-surface));
+  --el-button-border-color: color-mix(in srgb, var(--wc-accent) 65%, var(--wc-border));
+  --el-button-text-color: var(--wc-accent);
+  --el-button-hover-bg-color: color-mix(in srgb, var(--wc-accent) 38%, var(--wc-surface));
+  --el-button-hover-border-color: var(--wc-accent);
+  --el-button-hover-text-color: var(--wc-text);
+  --el-button-disabled-bg-color: color-mix(in srgb, var(--wc-surface-elevated) 48%, transparent);
+  --el-button-disabled-border-color: var(--wc-border);
+  --el-button-disabled-text-color: var(--wc-muted);
+  background-color: var(--el-button-bg-color) !important;
+  color: var(--el-button-text-color) !important;
+  border-color: var(--el-button-border-color) !important;
+}
+
+html[data-theme]
+  .el-message-box.wc-migration-confirm-msgbox
+  .el-message-box__btns
+  .el-button--primary:not(.is-disabled):hover,
+html[data-theme]
+  .el-message-box.wc-migration-confirm-msgbox
+  .el-message-box__btns
+  .el-button--primary:not(.is-disabled):focus-visible,
+html[data-theme]
+  .el-message-box.wc-migration-confirm-msgbox
+  .el-message-box__btns
+  .el-button--primary:not(.is-disabled):active,
+html[data-theme]
+  .el-message-box.wc-objects-delete-msgbox
+  .el-message-box__btns
+  .el-button--primary:not(.is-disabled):hover,
+html[data-theme]
+  .el-message-box.wc-objects-delete-msgbox
+  .el-message-box__btns
+  .el-button--primary:not(.is-disabled):focus-visible,
+html[data-theme]
+  .el-message-box.wc-objects-delete-msgbox
+  .el-message-box__btns
+  .el-button--primary:not(.is-disabled):active {
+  background-color: var(--el-button-hover-bg-color) !important;
+  border-color: var(--el-button-hover-border-color) !important;
+  color: var(--el-button-hover-text-color) !important;
 }
 
 html[data-theme] .el-dialog {

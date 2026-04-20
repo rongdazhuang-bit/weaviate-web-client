@@ -3,9 +3,11 @@ name: weaviate-vue-client
 description: >-
   Implements and maintains the Weaviate vector DB web client using Vue 3,
   Element Plus, TypeScript, Pinia, and REST/GraphQL to Weaviate. Use when
-  working on weaviate-web-client: login/connect UI, cluster meta/discovery,
+  working on weaviate-web-client: login/connect UI, instance overview (nodes/meta),
   collection sidebar, object/folder browsing, embedding-backed vector search,
-  CORS, or UI theme/styling (ThemePicker, themes.css, wc CSS variables).
+  CORS, or UI theme/styling (ThemePicker, themes.css, wc CSS variables),
+  API migration (`ApiMigrationView`, `wc-migration-confirm-msgbox`),
+  or Element Plus **button conventions** (default style = API migration style; see §10.8).
 ---
 
 # Weaviate Vue 客户端 — 技术框架 Skill
@@ -47,9 +49,9 @@ description: >-
 - **Schema / 集合列表**：通过 `src/api/weaviate.ts` 等封装调用 REST/GraphQL，避免散落易碎 URL。
 - **对象计数**：优先 GraphQL `Aggregate`；失败时降级并提示用户。
 - **对象列表**：分页 `limit` + `after` cursor（或 offset 策略），禁止一次拉全量。
-- **向量检索**：
-  - 主路径：应用侧 **嵌入 API** 得到向量 → `nearVector` 查询。
-  - 可选：若 `meta` 显示支持 `nearText` 且用户启用，可走 `nearText`（需确认模块与 class 配置）。
+- **向量检索页**（`SearchView.vue`）：
+  - **BM25**：GraphQL `bm25`，倒排索引关键词检索，无需嵌入；**默认检索方式**。
+  - **向量检索**：应用侧 **嵌入 API** → `nearVector`。
 
 ## 6. 嵌入（LLM）配置
 
@@ -68,7 +70,7 @@ description: >-
 src/
   api/           # weaviate REST/GraphQL、embedding 客户端
   stores/        # pinia：connection、embedding、theme 等
-  views/         # Login, AppLayout, Cluster, Collection*, Search
+  views/         # Login, AppLayout, OverviewView, Collection*, Search
   components/    # ThemePicker 等；集合子页导航在 CollectionLayout（el-tabs）
   assets/styles/ # global.css、themes.css
   router/
@@ -122,6 +124,31 @@ src/
 - 新增预设：在 `theme.ts` 的 `ThemeId` / `isThemeId`、`ThemePicker` 的 `items`、`themes.css` 增加 `html[data-theme='新 id'] { … }`，并保持 `global.css` 的 `:root` 与默认主题一致或依赖 `index.html` 的 `data-theme`。
 - 新增页面组件时优先用 **`var(--wc-*)`** 与既有 class（`.page`、`.muted`、`.json`），减少与 `themes.css` 的重复覆盖。
 
+### 10.7 API 迁移：`ElMessageBox.confirm` 样式约定
+
+- **位置**：`src/views/ApiMigrationView.vue` 在「启动正式迁移」时使用 `ElMessageBox.confirm`，并传入 **`customClass: 'wc-migration-confirm-msgbox'`**。
+- **透明弹层**：在 **`themes.css`** 中通过 `.el-message-box.wc-migration-confirm-msgbox` 与 `.el-overlay-message-box:has(.wc-migration-confirm-msgbox)` 将确认框面板与遮罩设为透明（保留细边框）；`sunshine` 主题另有覆盖，避免浅色下遮罩仍带底色。
+- **「确定」按钮**：Element Plus 将确认键渲染为 **`el-button--primary`**。本项目要求与 **全局默认按钮** 一致（非主色实心高亮），**不得**仅去掉 `type`（MessageBox API 无法控制）。应在 **`themes.css`** 中为  
+  `.el-message-box.wc-migration-confirm-msgbox .el-message-box__btns .el-button--primary`  
+  覆盖与 **`html[data-theme] .el-button--default`** 段相同的 `--el-button-*` 变量及 hover，与主内容区默认按钮对齐。
+- **业务规则**：迁移前校验源/目标地址经 `normalizeConnectionUrl` 后不得相同（见 `areSameWeaviateEndpoints`，`src/utils/connectionUrl.ts`）。
+- **向量数据**：`runApiMigration`（`src/api/apiMigration.ts`）对列表使用 `include=vector`；若某条在列表响应中仍无向量，则对该 UUID 再 `GET /v1/objects/{id}?include=vector` 补拉。写入时通过 `extractVectorsFromWeaviateObject`（`src/utils/weaviateVectors.ts`）解析 `vector` / `vectors`（含嵌套 `default`），批量与 PUT 均携带 `vector` 与 `vectors` 字段。
+
+### 10.8 按钮规范（项目默认 = API 迁移默认样式）
+
+本仓库将 **API 迁移相关页** 使用的 **`el-button` 默认样式**（不写 `type="primary"`、非实心主色块）定为 **全项目常规按钮规范**。
+
+| 规则 | 说明 |
+|------|------|
+| **默认（推荐）** | 使用 `<el-button>` **不写 `type`**，或显式 `type="default"`。外观由 **`themes.css`** 中「默认按钮」规则统一：淡色底、**`--wc-accent` 描边与字色**、hover 略加深（选择器含 `html[data-theme] .el-button--default` 与 `:not(.el-button--primary):not(...)` 一段，约 **400–462 行**）。 |
+| **参考实现** | `src/views/ApiMigrationView.vue`（开始迁移、加载集合、开始、关闭）、`MigrationApiGuideView.vue`（开始迁移）、`DataMigrationView.vue`（备份/恢复/API 迁移）、`SearchView.vue`（测试嵌入、检索）、`CollectionObjectsView` / `CollectionFoldersView` 等表单与工具按钮。 |
+| **`type="primary"`** | **少用**。仅用于 **整页唯一关键主行动**、必须与常规按钮拉开层级时，例如 **`LoginView.vue`** 的「连接并登录」提交。登录后壳内 **禁止** 为普通表单操作、列表刷新、侧栏/卡片内操作滥用 `primary`。 |
+| **`text` / `link`** | 弱操作（如卡片标题栏「刷新」文字链）可用 `text`；若与产品要求冲突，可逐步改为与默认填充按钮一致（无 `type` + `size="small"`）。 |
+| **圆形图标按钮** | 顶栏 `ThemePicker`、`LanguageSwitcher`、退出等 **`circle` + 无 `type`**，属工具图标，不强制与填充默认按钮一致。 |
+| **MessageBox** | 确认键 EP 固定为 `primary` 外观时，用 **`customClass`** + `themes.css` 覆盖为与默认按钮一致（见 **§10.7**）。 |
+
+新增或修改界面时，**默认**按上表；若新增 `type="primary"`，须在 PR/说明中解释为何属于「唯一关键主行动」。
+
 ## 11. 测试与质量
 
 - 关键逻辑：`connection` 组装 URL、`aggregate` 降级、嵌入测试请求 — 适合单元测试（Vitest）。
@@ -139,3 +166,5 @@ src/
 - 调整 Weaviate REST/GraphQL 封装与调用。
 - 处理 CORS、混合内容（HTTPS 页面请求 HTTP Weaviate）问题。
 - 修改主题、顶栏/侧栏/主内容样式、`ThemePicker`、或 Element Plus 深色适配（`themes.css` / `global.css`）。
+- API 迁移页、`wc-migration-confirm-msgbox`、源/目标地址校验（`areSameWeaviateEndpoints`）。
+- 新增或调整 **Element Plus 按钮**（`el-button` 的 `type`、与 `themes.css` 默认按钮段的关系）。

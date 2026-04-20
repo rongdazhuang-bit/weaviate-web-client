@@ -15,6 +15,16 @@
         >
           {{ t('common.refresh') }}
         </el-button>
+        <el-button
+          type="danger"
+          size="small"
+          class="ml"
+          :loading="deleting"
+          :disabled="loading || !cls"
+          @click="onDeleteCollection"
+        >
+          {{ t('collection.deleteCollection') }}
+        </el-button>
       </template>
       <div class="overview-body">
         <el-descriptions
@@ -39,20 +49,30 @@
         </el-descriptions>
         <el-empty v-else :description="t('collection.loadSchemaFailed')" />
         <el-divider />
-        <h4 class="h4">{{ t('collection.propsTitle') }}</h4>
-        <el-table v-if="cls?.properties?.length" :data="cls.properties" size="small" border stripe>
-          <el-table-column
-            prop="name"
-            :label="t('collection.colName')"
-            min-width="200"
-            width="240"
-            show-overflow-tooltip
-          />
-          <el-table-column :label="t('collection.colType')" min-width="260" show-overflow-tooltip>
-            <template #default="{ row }">{{ row.dataType?.join?.(', ') || row.dataType }}</template>
-          </el-table-column>
-        </el-table>
-        <el-empty v-else :description="t('collection.noProps')" />
+        <template v-if="cls?.properties?.length">
+          <h4 class="h4">{{ t('collection.propsTitle') }}</h4>
+          <el-table
+            class="properties-detail-table"
+            :data="cls.properties"
+            size="small"
+            border
+            stripe
+          >
+            <el-table-column
+              v-for="key in propertyDetailKeys"
+              :key="key"
+              :label="key"
+              min-width="140"
+              class-name="wc-prop-detail-cell"
+              show-overflow-tooltip
+            >
+              <template #default="{ row }">
+                {{ formatPropertyCellValue((row as Record<string, unknown>)[key]) }}
+              </template>
+            </el-table-column>
+          </el-table>
+        </template>
+        <el-empty v-else-if="cls" :description="t('collection.noProps')" />
 
         <div class="config-section">
           <h4 class="h4">{{ t('collection.replication') }}</h4>
@@ -199,15 +219,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
-import { aggregateCount, fetchClassSchema, type WeaviateClass } from '@/api/weaviate'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { aggregateCount, deleteClassSchema, fetchClassSchema, type WeaviateClass } from '@/api/weaviate'
+import { useCollectionStatsStore } from '@/stores/collectionStats'
 import { configObjectToRows } from '@/utils/configTable'
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
+const collectionStats = useCollectionStatsStore()
+const reloadAppClasses = inject<() => Promise<void>>('reloadAppClasses', () => Promise.resolve())
 const loading = ref(false)
+const deleting = ref(false)
 const cls = ref<WeaviateClass | null>(null)
 const count = ref<number | null>(null)
 
@@ -221,6 +247,23 @@ const vectorRows = computed(() =>
 const multiTenancyRows = computed(() => configObjectToRows(cls.value?.multiTenancyConfig))
 const invertedRows = computed(() => configObjectToRows(cls.value?.invertedIndexConfig))
 
+/** 各 property 对象的一级字段名（并集），name 优先，其余字母序 */
+const propertyDetailKeys = computed(() => {
+  const keys = new Set<string>()
+  for (const p of cls.value?.properties ?? []) {
+    Object.keys(p as Record<string, unknown>).forEach((k) => keys.add(k))
+  }
+  const rest = Array.from(keys).filter((k) => k !== 'name').sort()
+  return keys.has('name') ? ['name', ...rest] : rest
+})
+
+/** 一级字段值：标量直接展示；对象/数组（含嵌套 JSON）整段 JSON.stringify */
+function formatPropertyCellValue(v: unknown): string {
+  if (v === null || v === undefined) return t('common.emDash')
+  if (typeof v === 'object') return JSON.stringify(v)
+  return String(v)
+}
+
 async function load() {
   loading.value = true
   try {
@@ -232,6 +275,36 @@ async function load() {
     count.value = null
   } finally {
     loading.value = false
+  }
+}
+
+async function onDeleteCollection() {
+  const name = className.value
+  if (!cls.value || !name) return
+  try {
+    await ElMessageBox.confirm(
+      t('collection.deleteCollectionConfirmMsg', { name }),
+      t('collection.deleteCollectionConfirmTitle'),
+      {
+        type: 'warning',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      },
+    )
+  } catch {
+    return
+  }
+  deleting.value = true
+  try {
+    await deleteClassSchema(name)
+    ElMessage.success(t('collection.deleteCollectionOk', { name }))
+    await reloadAppClasses()
+    await collectionStats.fetchStats(true)
+    await router.replace({ name: 'overview' })
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : t('collection.deleteCollectionFail'))
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -251,6 +324,18 @@ onMounted(() => load())
 .h4 {
   margin: 0 0 8px;
   font-size: 14px;
+}
+
+.properties-detail-table {
+  width: 100%;
+}
+
+.properties-detail-table :deep(.wc-prop-detail-cell .cell) {
+  font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .overview-body {

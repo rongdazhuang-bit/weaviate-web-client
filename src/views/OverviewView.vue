@@ -1,8 +1,8 @@
 <template>
-  <div class="page page-cluster">
-    <h2 class="title">{{ t('cluster.title') }}</h2>
+  <div class="page page-overview">
+    <h2 class="title">{{ t('overview.title') }}</h2>
 
-    <section class="nodes-dashboard mt" :aria-label="t('cluster.nodesAria')">
+    <section class="nodes-dashboard mt" :aria-label="t('overview.nodesAria')">
       <div v-if="nodeList.length" class="nodes-grid">
         <el-card
           v-for="(n, idx) in nodeList"
@@ -12,34 +12,34 @@
         >
           <dl class="node-dash-dl">
             <div class="node-dash-row">
-              <dt>{{ t('cluster.node') }}</dt>
+              <dt>{{ t('overview.node') }}</dt>
               <dd class="wrap">{{ n.name }}</dd>
             </div>
             <div class="node-dash-row">
-              <dt>{{ t('cluster.mode') }}</dt>
+              <dt>{{ t('overview.mode') }}</dt>
               <dd>{{ n.operationalMode }}</dd>
             </div>
             <div class="node-dash-row">
-              <dt>{{ t('cluster.status') }}</dt>
+              <dt>{{ t('overview.status') }}</dt>
               <dd>
                 <el-tag :type="statusTagType(n.status)" size="small">{{ n.status }}</el-tag>
               </dd>
             </div>
             <div class="node-dash-row">
-              <dt>{{ t('cluster.version') }}</dt>
+              <dt>{{ t('overview.version') }}</dt>
               <dd class="mono">{{ n.version }}</dd>
             </div>
           </dl>
         </el-card>
       </div>
-      <el-empty v-else :description="t('cluster.noNodes')" />
+      <el-empty v-else :description="t('overview.noNodes')" />
     </section>
 
     <section class="meta-row mt">
-      <el-card shadow="never" class="collections-dash" :aria-label="t('cluster.collectionStats')">
+      <el-card shadow="never" class="collections-dash" :aria-label="t('overview.collectionStats')">
         <template #header>
           <div class="collections-dash-header">
-            <span>{{ t('cluster.collectionStats') }}</span>
+            <span>{{ t('overview.collectionStats') }}</span>
             <el-button
               size="small"
               text
@@ -54,15 +54,15 @@
         </template>
         <div class="dash-summary">
           <div class="dash-stat">
-            <span class="muted">{{ t('cluster.collectionCount') }}</span>
+            <span class="muted">{{ t('overview.collectionCount') }}</span>
             <strong class="dash-stat-value">{{ totalCollections }}</strong>
           </div>
           <div class="dash-stat">
-            <span class="muted">{{ t('cluster.objectTotal') }}</span>
+            <span class="muted">{{ t('overview.objectTotal') }}</span>
             <strong class="dash-stat-value">{{ totalObjectsText }}</strong>
           </div>
         </div>
-        <p v-if="partialCounts" class="dash-hint muted">{{ t('cluster.partialCountsHint') }}</p>
+        <p v-if="partialCounts" class="dash-hint muted">{{ t('overview.partialCountsHint') }}</p>
         <p v-if="lastUpdatedAt" class="dash-cache-line muted">{{ cacheLineText }}</p>
         <div class="dash-table-scroll">
           <div class="dash-table-wrap">
@@ -75,24 +75,24 @@
               class="dash-table"
               height="100%"
             >
-            <el-table-column prop="name" :label="t('cluster.colName')" min-width="120" show-overflow-tooltip />
-            <el-table-column :label="t('cluster.colObjects')" width="88" align="right">
+            <el-table-column prop="name" :label="t('overview.colName')" min-width="120" show-overflow-tooltip />
+            <el-table-column :label="t('overview.colObjects')" width="88" align="right">
                 <template #default="{ row }">
                   {{ row.count !== null ? row.count : t('common.emDash') }}
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty v-else-if="!statsLoading" :description="t('cluster.noCollections')" />
+            <el-empty v-else-if="!statsLoading" :description="t('overview.noCollections')" />
           </div>
         </div>
       </el-card>
 
       <el-card shadow="never" class="meta-card meta-card--fill">
-        <template #header>{{ t('cluster.metaHeader') }}</template>
+        <template #header>{{ t('overview.metaHeader') }}</template>
         <div v-if="metaJson" class="meta-json-scroll">
           <pre class="json">{{ metaJson }}</pre>
         </div>
-        <el-empty v-else :description="t('cluster.noMeta')" />
+        <el-empty v-else :description="t('overview.noMeta')" />
       </el-card>
     </section>
   </div>
@@ -122,7 +122,7 @@ const metaJson = computed(() => (meta.value ? JSON.stringify(meta.value, null, 2
 const cacheLineText = computed(() => {
   const ts = lastUpdatedAt.value
   if (!ts) return ''
-  return t('cluster.cachedAt', { time: formatWcDateTime(ts) })
+  return t('overview.cachedAt', { time: formatWcDateTime(ts) })
 })
 
 const totalCollections = computed(() => collectionStats.value.length)
@@ -151,7 +151,7 @@ function statusTagType(
   return 'warning'
 }
 
-async function loadCluster() {
+async function loadOverview() {
   const [metaRes, nodesRes] = await Promise.allSettled([fetchMeta(), fetchNodes()])
   meta.value = metaRes.status === 'fulfilled' ? metaRes.value : null
   nodes.value = nodesRes.status === 'fulfilled' ? nodesRes.value : null
@@ -162,7 +162,7 @@ async function loadCollectionStats(preferCache: boolean) {
   try {
     await statsStore.fetchStats(!preferCache)
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : t('cluster.statsFailed')
+    const msg = e instanceof Error ? e.message : t('overview.statsFailed')
     ElMessage.error(msg)
   }
 }
@@ -172,7 +172,7 @@ function onRefreshStats() {
 }
 
 onMounted(() => {
-  void loadCluster()
+  void loadOverview()
   void loadCollectionStats(true)
 })
 </script>
@@ -186,11 +186,11 @@ onMounted(() => {
   margin-top: 16px;
 }
 
-.page-cluster {
+.page-overview {
   min-height: 0;
 }
 
-.page-cluster .title {
+.page-overview .title {
   flex-shrink: 0;
 }
 

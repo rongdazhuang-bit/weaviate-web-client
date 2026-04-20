@@ -36,6 +36,8 @@ export interface WeaviateObject {
   id?: string
   properties?: Record<string, unknown>
   vector?: number[]
+  /** 命名向量（Weaviate 多向量） */
+  vectors?: Record<string, number[]>
   creationTimeUnix?: number
   lastUpdateTimeUnix?: number
 }
@@ -145,6 +147,15 @@ export async function fetchClassSchema(
   return data
 }
 
+/** DELETE /v1/schema/{className} — 删除集合（class）定义及其全部对象数据 */
+export async function deleteClassSchema(
+  className: string,
+  client: AxiosInstance = createWeaviateAxios(),
+): Promise<void> {
+  const { status } = await client.delete(`/v1/schema/${encodeURIComponent(className)}`)
+  if (status !== 200 && status !== 204) throw new Error(`delete schema HTTP ${status}`)
+}
+
 export async function graphqlQuery<T = unknown>(
   query: string,
   client: AxiosInstance = createWeaviateAxios(),
@@ -216,12 +227,55 @@ export async function getObjectById(
   return data
 }
 
+/** DELETE /v1/objects/{id}?class=… — 需指定 class，见 REST Objects */
+export async function deleteObjectById(
+  className: string,
+  id: string,
+  client: AxiosInstance = createWeaviateAxios(),
+): Promise<void> {
+  const params = new URLSearchParams()
+  params.set('class', className)
+  const { status } = await client.delete(`/v1/objects/${encodeURIComponent(id)}?${params.toString()}`)
+  if (status !== 200 && status !== 204) throw new Error(`delete object HTTP ${status}`)
+}
+
 export interface NearVectorHit {
   id?: string
   distance?: number
   certainty?: number
+  /** BM25：GraphQL `_additional.score`；向量检索通常不填 */
+  score?: number
+  /** BM25：GraphQL `_additional.explainScore`（BM25F 分解说明） */
+  explainScore?: string
   properties: Record<string, unknown>
   vectorPreview?: number[]
+}
+
+/** 解析 GraphQL `_additional` 中的数值（部分 Weaviate 响应会把 score/distance 等序列化为字符串） */
+function parseGraphQLNumber(v: unknown): number | undefined {
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (typeof v === 'string') {
+    const n = Number(v.trim())
+    if (Number.isFinite(n)) return n
+  }
+  return undefined
+}
+
+/** 解析 BM25 / hybrid 返回的 explainScore（多为字符串，亦可能为结构化 JSON） */
+function explainScoreToDisplayString(v: unknown): string | undefined {
+  if (v == null) return undefined
+  if (typeof v === 'string') {
+    const t = v.trim()
+    return t.length ? t : undefined
+  }
+  if (typeof v === 'object') {
+    try {
+      return JSON.stringify(v, null, 2)
+    } catch {
+      return String(v)
+    }
+  }
+  return String(v)
 }
 
 export async function nearVectorSearch(
@@ -256,12 +310,80 @@ export async function nearVectorSearch(
   }
   const rows = res.inner?.Get?.[className] ?? []
   return rows.map((row) => {
-    const add = row._additional as { id?: string; distance?: number; certainty?: number } | undefined
+    const add = row._additional as
+      | { id?: string; distance?: unknown; certainty?: unknown }
+      | undefined
     const { _additional, ...rest } = row
+    const distance = parseGraphQLNumber(add?.distance)
+    const certainty = parseGraphQLNumber(add?.certainty)
     return {
       id: add?.id,
-      distance: add?.distance,
-      certainty: add?.certainty,
+      distance,
+      certainty,
+      properties: rest as Record<string, unknown>,
+    }
+  })
+}
+
+function escapeGraphQLStringLiteral(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+/** 倒排索引 BM25 关键词检索（无需向量化），需 class 属性启用 inverted index */
+export async function bm25Search(
+  className: string,
+  query: string,
+  limit: number,
+  propertyNames: string[],
+  bm25SearchProperties?: string[],
+  client: AxiosInstance = createWeaviateAxios(),
+): Promise<NearVectorHit[]> {
+  const g = escapeGraphQLClassName(className)
+  const escaped = query.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\s+/g, ' ').trim()
+  const bm25Props = bm25SearchProperties?.length
+    ? bm25SearchProperties.map((p) => `"${escapeGraphQLStringLiteral(p)}"`).join(', ')
+    : undefined
+  const bm25Inner = bm25Props
+    ? `query: "${escaped}"
+          properties: [${bm25Props}]`
+    : `query: "${escaped}"`
+  const fields = [
+    '_additional { id score explainScore }',
+    ...propertyNames.filter((p) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(p)),
+  ].join('\n')
+  const q = `{
+    Get {
+      ${g}(
+        bm25: {
+          ${bm25Inner}
+        }
+        limit: ${limit}
+      ) {
+        ${fields}
+      }
+    }
+  }`
+  const res = await graphqlQuery<{
+    Get: Record<string, Record<string, unknown>[]>
+  }>(q, client)
+  if (res.errors?.length) {
+    const msg = res.errors.map((e) => e.message).join('; ')
+    throw new Error(msg)
+  }
+  const rows = res.inner?.Get?.[className] ?? []
+  return rows.map((row) => {
+    const add = row._additional as
+      | { id?: string; score?: unknown; explainScore?: unknown }
+      | undefined
+    const { _additional, ...rest } = row
+    const score = parseGraphQLNumber(add?.score)
+    const explainScore = explainScoreToDisplayString(add?.explainScore)
+    return {
+      id: add?.id,
+      distance: undefined,
+      certainty: undefined,
+      score,
+      explainScore,
       properties: rest as Record<string, unknown>,
     }
   })
@@ -299,12 +421,12 @@ export async function nearTextSearch(
   }
   const rows = res.inner?.Get?.[className] ?? []
   return rows.map((row) => {
-    const add = row._additional as { id?: string; distance?: number; certainty?: number } | undefined
+    const add = row._additional as { id?: string; distance?: unknown; certainty?: unknown } | undefined
     const { _additional, ...rest } = row
     return {
       id: add?.id,
-      distance: add?.distance,
-      certainty: add?.certainty,
+      distance: parseGraphQLNumber(add?.distance),
+      certainty: parseGraphQLNumber(add?.certainty),
       properties: rest as Record<string, unknown>,
     }
   })

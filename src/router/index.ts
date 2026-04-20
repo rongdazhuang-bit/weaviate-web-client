@@ -15,11 +15,15 @@ const router = createRouter({
       component: () => import('@/views/AppLayout.vue'),
       meta: { requiresAuth: true },
       children: [
-        { path: '', redirect: { name: 'cluster' } },
+        { path: '', redirect: { name: 'overview' } },
+        {
+          path: 'overview',
+          name: 'overview',
+          component: () => import('@/views/OverviewView.vue'),
+        },
         {
           path: 'cluster',
-          name: 'cluster',
-          component: () => import('@/views/ClusterView.vue'),
+          redirect: { name: 'overview' },
         },
         {
           path: 'collections/:name',
@@ -47,6 +51,31 @@ const router = createRouter({
           name: 'search',
           component: () => import('@/views/SearchView.vue'),
         },
+        {
+          path: 'ops/migration/backup',
+          name: 'migration-backup',
+          component: () => import('@/views/MigrationBackupGuideView.vue'),
+        },
+        {
+          path: 'ops/migration/restore',
+          name: 'migration-restore',
+          component: () => import('@/views/MigrationRestoreGuideView.vue'),
+        },
+        {
+          path: 'ops/migration/api/run',
+          name: 'migration-api-run',
+          component: () => import('@/views/ApiMigrationView.vue'),
+        },
+        {
+          path: 'ops/migration/api',
+          name: 'migration-api',
+          component: () => import('@/views/MigrationApiGuideView.vue'),
+        },
+        {
+          path: 'ops/migration',
+          name: 'data-migration',
+          component: () => import('@/views/DataMigrationView.vue'),
+        },
       ],
     },
   ],
@@ -58,7 +87,7 @@ router.beforeEach((to) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
   if (to.name === 'login' && conn.connected) {
-    return { name: 'cluster' }
+    return { name: 'overview' }
   }
   return true
 })
