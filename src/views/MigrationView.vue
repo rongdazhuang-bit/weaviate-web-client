@@ -288,14 +288,18 @@ async function onStartClick() {
   appendLog(t('apiMigration.logStart'))
 
   try {
-    await runApiMigration(
+    const { batchItemFailures } = await runApiMigration(
       cfg,
       (line) => appendLog(line),
       (pct) => {
         progressPct.value = pct
       },
     )
-    ElMessage.success(t('apiMigration.migrateDone'))
+    if (batchItemFailures > 0) {
+      ElMessage.warning(t('apiMigration.migrateDoneWithBatchFailures', { n: batchItemFailures }))
+    } else {
+      ElMessage.success(t('apiMigration.migrateDone'))
+    }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     appendLog(t('apiMigration.logFail', { msg }))

@@ -7,12 +7,14 @@ import '@/assets/styles/global.css'
 import '@/assets/styles/themes.css'
 import App from './App.vue'
 import router from './router'
+import { useConnectionStore } from '@/stores/connection'
 import { useThemeStore } from '@/stores/theme'
 import { i18n } from './i18n'
 
 const app = createApp(App)
 const pinia = createPinia()
 app.use(pinia)
+useConnectionStore().restoreSessionFromStorage()
 useThemeStore().init()
 app.use(i18n)
 app.use(router)

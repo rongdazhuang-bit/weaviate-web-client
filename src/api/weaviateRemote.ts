@@ -121,6 +121,58 @@ export interface BatchObjectsResponse {
   errors?: unknown
 }
 
+/** 解析 POST /v1/batch/objects 的逐条 `result[].status`（通常为 SUCCESS / FAILED） */
+export interface BatchObjectsOutcome {
+  succeeded: number
+  failed: number
+  failures: { index: number; id?: string; detail: string }[]
+}
+
+function formatBatchRowErrors(errors?: { error?: string[] } | null): string {
+  const arr = errors?.error
+  if (Array.isArray(arr) && arr.length > 0) return arr.join('; ')
+  return '无详细错误信息'
+}
+
+/**
+ * 按请求顺序校验 Weaviate 返回的 `result` 数组；仅 `status` 为 SUCCESS 计为成功（大小写不敏感）。
+ * `result` 条数少于请求条数时，缺失下标计为失败。
+ */
+export function summarizeBatchObjectsResponse(
+  data: BatchObjectsResponse,
+  requestObjects: { id?: string }[],
+): BatchObjectsOutcome {
+  const results = data.result ?? []
+  const n = requestObjects.length
+  const failures: BatchObjectsOutcome['failures'] = []
+  let succeeded = 0
+
+  for (let i = 0; i < n; i++) {
+    const id = requestObjects[i]?.id
+    const row = results[i]
+    if (row === undefined) {
+      failures.push({
+        index: i,
+        id,
+        detail: '响应中缺少与本请求对应的 result 项（条数不一致）',
+      })
+      continue
+    }
+    const st = (row.status ?? '').toString().trim().toUpperCase()
+    if (st === 'SUCCESS') {
+      succeeded++
+      continue
+    }
+    const detail =
+      st === 'FAILED' || st === ''
+        ? formatBatchRowErrors(row.errors)
+        : `${st}: ${formatBatchRowErrors(row.errors)}`
+    failures.push({ index: i, id, detail })
+  }
+
+  return { succeeded, failed: failures.length, failures }
+}
+
 export async function batchCreateObjectsRemote(
   client: AxiosInstance,
   objects: {

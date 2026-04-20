@@ -289,6 +289,8 @@ export default {
     logValidateOk: 'Validation OK.',
     logFail: 'Migration failed: {msg}',
     migrateDone: 'Migration finished',
+    migrateDoneWithBatchFailures:
+      'Migration finished, but {n} batch write(s) failed in total (see the log for details)',
   },
   search: {
     title: 'Vector search',

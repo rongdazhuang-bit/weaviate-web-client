@@ -10,6 +10,7 @@ import {
   listObjectsRemote,
   objectExistsRemote,
   putObjectRemote,
+  summarizeBatchObjectsResponse,
 } from '@/api/weaviateRemote'
 import type { WeaviateMeta, WeaviateObject } from '@/api/weaviate'
 import { extractVectorsFromWeaviateObject, hasVectorPayload } from '@/utils/weaviateVectors'
@@ -157,12 +158,20 @@ async function runPool<T>(items: T[], concurrency: number, fn: (item: T) => Prom
   await Promise.all(workers)
 }
 
+/** 增量迁移中 POST /v1/batch/objects 的逐条成功/失败累计（全量 PUT 模式不计入） */
+export interface ApiMigrationRunResult {
+  batchItemSuccesses: number
+  batchItemFailures: number
+}
+
+const BATCH_FAIL_LOG_CAP = 8
+
 export async function runApiMigration(
   cfg: ApiMigrationConfig,
   onLog: (line: string) => void,
   onProgress: (pct: number) => void,
   signal?: AbortSignal,
-): Promise<void> {
+): Promise<ApiMigrationRunResult> {
   const src = createWeaviateClientForUrl(cfg.sourceUrl, cfg.sourceKey)
   const tgt = createWeaviateClientForUrl(cfg.targetUrl, cfg.targetKey)
 
@@ -173,21 +182,38 @@ export async function runApiMigration(
   if (classes.length === 0) throw new Error('no classes selected')
 
   let totalEstimate = 0
+  /** 任一类 Aggregate 返回 null（GraphQL 错误等）时，总和可能不可靠，不得与「真的 0 条」混淆 */
+  let aggregateUnavailable = false
   for (const c of classes) {
     const n = await aggregateCountRemote(c, src)
-    totalEstimate += n ?? 0
+    if (n === null) aggregateUnavailable = true
+    else totalEstimate += n
   }
-  if (totalEstimate === 0) {
+  if (totalEstimate === 0 && !aggregateUnavailable) {
     onLog('[迁移] 源端选中范围内无对象，结束。')
     onProgress(100)
-    return
+    return { batchItemSuccesses: 0, batchItemFailures: 0 }
+  }
+  if (totalEstimate === 0 && aggregateUnavailable) {
+    onLog(
+      '[迁移] 无法在迁移前统计对象数量（GraphQL Aggregate 不可用或异常），将继续按 REST 扫描；完成前百分比为近似值。',
+    )
   }
 
   let processed = 0
+  const progressDenom = totalEstimate > 0 ? totalEstimate : null
   const bump = () => {
     processed++
-    onProgress(Math.min(99, Math.round((processed / totalEstimate) * 100)))
+    if (progressDenom != null) {
+      onProgress(Math.min(99, Math.round((processed / progressDenom) * 100)))
+    } else {
+      // 分母未知：用饱和曲线趋近 99%，避免除零或第一步打满
+      onProgress(Math.min(99, Math.round(100 * (1 - Math.exp(-processed / 800)))))
+    }
   }
+
+  let batchItemSuccesses = 0
+  let batchItemFailures = 0
 
   for (const className of classes) {
     if (signal?.aborted) throw new Error('aborted')
@@ -230,7 +256,25 @@ export async function runApiMigration(
         }
         if (batch.length) {
           onLog(`[迁移] ${className} 第 ${pageIdx} 页：批量写入 ${batch.length} 条（增量，含向量字段）`)
-          await batchCreateObjectsRemote(tgt, batch)
+          const rawRes = await batchCreateObjectsRemote(tgt, batch)
+          const outcome = summarizeBatchObjectsResponse(rawRes, batch)
+          batchItemSuccesses += outcome.succeeded
+          batchItemFailures += outcome.failed
+          if (outcome.failed > 0) {
+            onLog(
+              `[迁移] ${className} 第 ${pageIdx} 页：本批写入结果 — 成功 ${outcome.succeeded} 条，失败 ${outcome.failed} 条`,
+            )
+            const slice = outcome.failures.slice(0, BATCH_FAIL_LOG_CAP)
+            for (const f of slice) {
+              const idFrag = f.id ? ` id=${String(f.id).slice(0, 8)}…` : ''
+              onLog(`[迁移]   失败 #${f.index}${idFrag} ${f.detail}`)
+            }
+            if (outcome.failures.length > BATCH_FAIL_LOG_CAP) {
+              onLog(
+                `[迁移]   …另有 ${outcome.failures.length - BATCH_FAIL_LOG_CAP} 条失败未逐条列出`,
+              )
+            }
+          }
           for (let i = 0; i < batch.length; i++) bump()
         } else {
           onLog(`[迁移] ${className} 第 ${pageIdx} 页：本页无新对象（均已存在）`)
@@ -259,5 +303,11 @@ export async function runApiMigration(
   }
 
   onProgress(100)
+  if (cfg.mode === 'incremental' && (batchItemSuccesses > 0 || batchItemFailures > 0)) {
+    onLog(
+      `[迁移] 增量批量写入汇总：成功 ${batchItemSuccesses} 条，失败 ${batchItemFailures} 条。`,
+    )
+  }
   onLog('[迁移] 全部完成。')
+  return { batchItemSuccesses, batchItemFailures }
 }

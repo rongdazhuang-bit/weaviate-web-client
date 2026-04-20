@@ -107,6 +107,7 @@ async function onSubmit() {
     }
     await fetchMeta()
     conn.connected = true
+    conn.saveTabSession()
     form.address = conn.connectionUrl
     ElMessage.success(t('login.success'))
     const redir = (route.query.redirect as string) || '/app/overview'
