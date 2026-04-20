@@ -1,10 +1,19 @@
 <template>
-  <div class="page page-migration-guide">
+  <div
+    class="page page-migration-guide"
+    :class="{ 'page-migration-guide--progress': progressShown }"
+  >
     <h2 class="title">{{ t('migration.restoreRun.title') }}</h2>
     <p class="muted lead">{{ t('migration.restoreRun.lead') }}</p>
 
-    <el-card shadow="never" class="guide-card">
-      <el-form label-position="top" size="small" class="restore-form">
+    <el-card
+      shadow="never"
+      class="guide-card"
+      :class="{ 'guide-card--progress': progressShown }"
+    >
+      <div class="migration-run-top">
+        <div class="migration-run-body">
+          <el-form label-position="top" size="small" class="restore-form">
         <el-form-item :label="t('migration.restoreRun.sourceLabel')">
           <el-select v-model="backend" class="backend-select" :disabled="running">
             <el-option value="filesystem" :label="t('migration.restoreRun.localRestore')" />
@@ -47,10 +56,12 @@
             {{ t('migration.restoreRun.overwriteHint') }}
           </el-checkbox>
         </el-form-item>
-      </el-form>
-      <div class="migration-actions">
-        <el-button :loading="running" @click="onRunRestore">{{ t('migration.restoreRun.runRestore') }}</el-button>
-        <el-button :disabled="running" @click="goBackToDataMigration">{{ t('migration.backLabel') }}</el-button>
+          </el-form>
+        </div>
+        <div class="migration-actions">
+          <el-button :loading="running" @click="onRunRestore">{{ t('migration.restoreRun.runRestore') }}</el-button>
+          <el-button :disabled="running" @click="goBackToDataMigration">{{ t('migration.backLabel') }}</el-button>
+        </div>
       </div>
 
       <div v-show="progressShown" class="restore-progress-block">
@@ -63,7 +74,7 @@
         <div class="log-toolbar">
           <span class="muted">{{ t('migration.restoreRun.logLabel') }}</span>
         </div>
-        <el-scrollbar max-height="220px" class="log-scroll">
+        <el-scrollbar class="log-scroll">
           <pre class="log-pre">{{ logText }}</pre>
         </el-scrollbar>
       </div>
@@ -235,16 +246,29 @@ async function onRunRestore() {
 <style scoped>
 .page-migration-guide {
   max-width: 720px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.page-migration-guide--progress {
+  overflow: hidden;
 }
 
 .title {
   margin: 0;
   font-size: 18px;
+  flex-shrink: 0;
 }
 
 .lead {
   margin: 12px 0 16px;
   line-height: 1.6;
+  flex-shrink: 0;
 }
 
 .guide-card {
@@ -252,8 +276,45 @@ async function onRunRestore() {
   background: var(--wc-surface-elevated);
 }
 
+.guide-card--progress {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .guide-card :deep(.el-card__body) {
   padding: 18px 20px 20px;
+}
+
+.guide-card--progress :deep(.el-card__body) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.migration-run-top {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.guide-card--progress .migration-run-top {
+  flex: 0 1 auto;
+  max-height: min(52vh, 420px);
+}
+
+.migration-run-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: visible;
+}
+
+.guide-card--progress .migration-run-body {
+  overflow-y: auto;
 }
 
 .restore-form :deep(.el-form-item__label) {
@@ -275,17 +336,29 @@ async function onRunRestore() {
 }
 
 .migration-actions {
-  margin-top: 20px;
+  flex-shrink: 0;
+  margin-top: 16px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: flex-end;
   align-items: center;
+}
+
+.guide-card--progress .migration-actions {
+  margin-top: auto;
+  padding-top: 12px;
 }
 
 .restore-progress-block {
   margin-top: 22px;
   padding-top: 16px;
   border-top: 1px solid var(--wc-border);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .panel-subtitle {
@@ -301,9 +374,19 @@ async function onRunRestore() {
 }
 
 .log-scroll {
+  flex: 1;
+  min-height: 120px;
   border: 1px solid var(--wc-border);
   border-radius: var(--wc-radius, 8px);
   background: var(--wc-code-bg, var(--wc-surface));
+}
+
+.log-scroll :deep(.el-scrollbar) {
+  height: 100%;
+}
+
+.log-scroll :deep(.el-scrollbar__wrap) {
+  overflow-x: hidden;
 }
 
 .log-pre {

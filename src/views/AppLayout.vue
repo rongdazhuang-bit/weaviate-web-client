@@ -5,7 +5,15 @@
         <div class="app-mark" aria-hidden="true">W</div>
         <div class="app-titles">
           <div class="app-name">{{ t('app.title') }}</div>
-          <div class="app-sub">{{ t('app.subtitle') }}</div>
+          <div class="app-sub-row">
+            <span class="app-sub">{{ t('app.subtitle') }}</span>
+            <template v-if="conn.connectionUrl">
+              <span class="app-sub-sep" aria-hidden="true">·</span>
+              <el-tooltip :content="conn.connectionUrl" placement="bottom" effect="dark">
+                <span class="app-sub-url">{{ conn.connectionUrl }}</span>
+              </el-tooltip>
+            </template>
+          </div>
         </div>
       </div>
       <div class="topbar-right">
@@ -212,10 +220,11 @@ const activeMenu = computed(() => {
   return p
 })
 
-/** 概览 / 向量检索 / 集合各子页：主区域不整体滚动，由子页内部（表格等）滚动 */
+/** 概览 / 向量检索 / 集合各子页 / 备份·恢复执行页：主区域不整体滚动，由子页内部滚动 */
 const mainScrollFill = computed(() => {
   const n = route.name
   if (n === 'overview' || n === 'search') return true
+  if (n === 'migration-backup-run' || n === 'migration-restore-run') return true
   return typeof n === 'string' && n.startsWith('collection-')
 })
 
@@ -325,7 +334,7 @@ onUnmounted(() => {
 
 <style scoped>
 .shell {
-  height: 100vh;
+  height: 100%;
   min-height: 0;
   background: var(--wc-bg);
   flex-direction: column;
@@ -346,7 +355,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 220px;
+  min-width: 0;
+  flex: 1;
 }
 
 .app-mark {
@@ -365,6 +375,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
 
 .app-name {
@@ -374,10 +386,36 @@ onUnmounted(() => {
   line-height: 1.2;
 }
 
-.app-sub {
+.app-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   font-size: 12px;
-  color: var(--wc-muted);
   line-height: 1.2;
+}
+
+.app-sub {
+  flex-shrink: 0;
+  color: var(--wc-muted);
+}
+
+.app-sub-sep {
+  flex-shrink: 0;
+  color: var(--wc-muted);
+  opacity: 0.55;
+}
+
+.app-sub-url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wc-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  cursor: default;
 }
 
 .topbar-right {

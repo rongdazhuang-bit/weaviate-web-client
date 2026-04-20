@@ -127,7 +127,8 @@ async function onSubmit() {
 
 <style scoped>
 .login-wrap {
-  min-height: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
