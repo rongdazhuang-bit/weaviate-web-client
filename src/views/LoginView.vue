@@ -50,7 +50,7 @@ import { ElMessage } from 'element-plus'
 import { useConnectionStore } from '@/stores/connection'
 import { fetchMeta, fetchReady } from '@/api/weaviate'
 import { parseConnectionInput } from '@/utils/connectionUrl'
-import { describeConnectionError, isMixedContentBlocked } from '@/utils/connectionErrors'
+import { describeConnectionError } from '@/utils/connectionErrors'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const { t } = useI18n()
@@ -97,12 +97,6 @@ async function onSubmit() {
     ElMessage.warning(t('login.invalidAddress'))
     return
   }
-  /* 直连 Weaviate 时 HTTPS 页不能请求 HTTP；同域 /weaviate 由服务端转发则不受混合内容限制 */
-  if (!conn.useSameOriginWeaviateProxy && isMixedContentBlocked(form.address)) {
-    ElMessage.error(t('login.mixedContent'))
-    return
-  }
-
   loading.value = true
   applyToStore()
   try {

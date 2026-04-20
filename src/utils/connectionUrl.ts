@@ -38,7 +38,7 @@ export function parseConnectionInput(input: string): {
   }
 }
 
-/** 将用户输入的连接串规范为 `http(s)://host:port`（用于 X-Weaviate-Target 或直连 baseURL） */
+/** 将用户输入的连接串规范为 `http(s)://host:port`（请求头 `X-Weaviate-Target` / 迁移页的源与目标） */
 export function normalizeConnectionUrl(input: string): string | null {
   const p = parseConnectionInput(input)
   if (!p) return null
@@ -51,4 +51,28 @@ export function areSameWeaviateEndpoints(a: string, b: string): boolean {
   const nb = normalizeConnectionUrl(b)
   if (!na || !nb) return false
   return na.toLowerCase() === nb.toLowerCase()
+}
+
+/**
+ * 嵌入 API 根 URL（OpenAI 兼容），如 `https://api.openai.com/v1`，用于请求头 `X-Embedding-Target`。
+ */
+export function normalizeEmbeddingTargetUrl(input: string): string | null {
+  const t = input.trim()
+  if (!t) return null
+  let s = t
+  if (!/^https?:\/\//i.test(s)) {
+    s = `https://${s.replace(/^\/+/, '')}`
+  }
+  try {
+    const u = new URL(s)
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
+    u.hash = ''
+    u.username = ''
+    u.password = ''
+    let out = u.toString()
+    if (out.endsWith('/')) out = out.slice(0, -1)
+    return out
+  } catch {
+    return null
+  }
 }

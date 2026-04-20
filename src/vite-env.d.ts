@@ -2,8 +2,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_WEAVIATE_PROXY_TARGET?: string
-  /** 为 true 时生产包也请求同域 /weaviate（需 Nginx→Node 反代，见 docker/） */
-  readonly VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY?: string
+  /** 开发 / vite preview 时，同域 `/weaviate` 转发到的 Node BFF 地址，默认 http://127.0.0.1:8787 */
+  readonly VITE_WEAVIATE_BFF_TARGET?: string
   /** 通用覆盖（开发/生产均可，若同時配置了分环境变量则分环境优先） */
   readonly VITE_CONNECTION_NETWORK_MESSAGE?: string
   /** 仅 `vite` / `npm run dev` 时使用 */

@@ -8,45 +8,76 @@ function headerString(req: IncomingMessage, name: string): string | undefined {
   return undefined
 }
 
-export interface WeaviateProxyOptions {
-  /** 无有效 X-Weaviate-Target 时的回退地址（与开发态 VITE_WEAVIATE_PROXY_TARGET 一致语义） */
+export interface ForwardProxyOptions {
+  /** 同域路径前缀，如 `/weaviate`、`/embedding` */
+  pathPrefix: string
+  /** 目标上游根地址，如 `X-Weaviate-Target`、`X-Embedding-Target`（小写匹配） */
+  targetHeader: string
   getFallbackTarget: () => string
 }
 
 /**
- * Connect 风格中间件：仅处理 `/weaviate` 前缀，其余调用 `next()`。
- * 供 Vite dev 与生产 Node 代理共用。
+ * 通用 HTTP 转发：浏览器请求同域 `pathPrefix/*`，由 Node 转发到请求头指定的 `http(s)://…` 根地址。
  */
-export function createWeaviateProxyHandler(opts: WeaviateProxyOptions) {
+export function createForwardProxyHandler(opts: ForwardProxyOptions) {
+  const { pathPrefix, targetHeader, getFallbackTarget } = opts
+  const headerLc = targetHeader.toLowerCase()
   const proxy = httpProxy.createProxyServer({
     ws: false,
     xfwd: true,
   })
 
   proxy.on('proxyReq', (proxyReq) => {
-    proxyReq.removeHeader('x-weaviate-target')
+    proxyReq.removeHeader(headerLc)
   })
 
   return (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => {
     const url = req.url || '/'
-    if (!url.startsWith('/weaviate')) {
+    if (!url.startsWith(pathPrefix)) {
       next()
       return
     }
 
-    const raw = headerString(req, 'x-weaviate-target')
-    const fallback = opts.getFallbackTarget()
+    const raw = headerString(req, headerLc)
+    const fallback = getFallbackTarget()
     let target =
       typeof raw === 'string' && /^https?:\/\//i.test(raw.trim()) ? raw.trim() : fallback
     if (target.endsWith('/')) target = target.slice(0, -1)
 
-    req.url = url.slice('/weaviate'.length) || '/'
+    req.url = url.slice(pathPrefix.length) || '/'
 
     proxy.web(req, res, { target, changeOrigin: true, secure: false }, (err) => {
       if (!err) return
       res.statusCode = 502
       res.setHeader('content-type', 'text/plain; charset=utf-8')
-      res.end(`Weaviate 代理转发失败：${err.message}`)
+      const label = pathPrefix === '/embedding' ? '嵌入 API' : 'Weaviate'
+      res.end(`${label} 代理转发失败：${err.message}`)
     })
   }
+}
+
+export interface WeaviateProxyOptions {
+  getFallbackTarget: () => string
+}
+
+/** `/weaviate` → `X-Weaviate-Target` */
+export function createWeaviateProxyHandler(opts: WeaviateProxyOptions) {
+  return createForwardProxyHandler({
+    pathPrefix: '/weaviate',
+    targetHeader: 'x-weaviate-target',
+    getFallbackTarget: opts.getFallbackTarget,
+  })
+}
+
+export interface EmbeddingProxyOptions {
+  getFallbackTarget: () => string
+}
+
+/** `/embedding` → `X-Embedding-Target`（OpenAI 兼容嵌入等） */
+export function createEmbeddingProxyHandler(opts: EmbeddingProxyOptions) {
+  return createForwardProxyHandler({
+    pathPrefix: '/embedding',
+    targetHeader: 'x-embedding-target',
+    getFallbackTarget: opts.getFallbackTarget,
+  })
 }

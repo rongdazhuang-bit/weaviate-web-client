@@ -38,8 +38,6 @@ export default {
     remember: 'Remember',
     submit: 'Connect',
     invalidAddress: 'Enter a valid connection URL',
-    mixedContent:
-      'This page is served over HTTPS and cannot call an HTTP Weaviate (mixed content). Use HTTPS for Weaviate or put the UI and API behind the same reverse proxy.',
     readyFailed: 'Readiness check failed (/.well-known/ready)',
     success: 'Connected',
   },
@@ -239,7 +237,7 @@ export default {
     baseUrl: 'Base URL',
     model: 'Model',
     apiKey: 'API Key',
-    embedPlaceholder: 'Browser direct calls may hit CORS',
+    embedPlaceholder: 'e.g. https://api.openai.com/v1 (proxied via /embedding)',
     testEmbed: 'Test embedding',
     testedDims: 'Dimensions: {n}',
     queryCard: 'Query',

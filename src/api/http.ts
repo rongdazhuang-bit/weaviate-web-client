@@ -5,7 +5,8 @@ import { useRequestLoadingStore } from '@/stores/requestLoading'
 let weaviateClient: AxiosInstance | null = null
 
 /**
- * 单例 + 每次请求从 Pinia 注入最新 baseURL / 头，避免登录后仍使用空 baseURL 的实例。
+ * Weaviate 专用 Axios：baseURL 为同域 `/weaviate`（connection store），并注入 `Authorization` + `X-Weaviate-Target`。
+ * 单例 + 每次请求从 Pinia 取最新配置。
  */
 export function createWeaviateAxios(): AxiosInstance {
   if (!weaviateClient) {

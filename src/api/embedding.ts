@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { normalizeEmbeddingTargetUrl } from '@/utils/connectionUrl'
 import { useRequestLoadingStore } from '@/stores/requestLoading'
 
 export interface EmbedResult {
@@ -7,13 +8,21 @@ export interface EmbedResult {
   latencyMs: number
 }
 
+/**
+ * 经同域 BFF `/embedding` 转发；`X-Embedding-Target` 为嵌入服务根 URL（与原先 baseURL 语义一致）。
+ */
 export async function embedTextOpenAICompatible(opts: {
   baseURL: string
   apiKey: string
   model: string
   text: string
 }): Promise<EmbedResult> {
-  const url = `${opts.baseURL.replace(/\/$/, '')}/embeddings`
+  const target = normalizeEmbeddingTargetUrl(opts.baseURL)
+  if (!target) {
+    throw new Error('无效的嵌入服务地址')
+  }
+
+  const apiPath = `${typeof window !== 'undefined' ? window.location.origin : ''}/embedding/embeddings`
   const started = performance.now()
   const loading = useRequestLoadingStore()
   loading.begin()
@@ -27,7 +36,7 @@ export async function embedTextOpenAICompatible(opts: {
       data?: { embedding?: number[] }[]
       usage?: unknown
     }>(
-      url,
+      apiPath,
       {
         model: opts.model,
         input: opts.text,
@@ -35,6 +44,7 @@ export async function embedTextOpenAICompatible(opts: {
       },
       {
         headers: {
+          'X-Embedding-Target': target,
           Authorization: opts.apiKey.startsWith('Bearer ') ? opts.apiKey : `Bearer ${opts.apiKey}`,
           'Content-Type': 'application/json',
         },

@@ -38,8 +38,6 @@ export default {
     remember: '记住',
     submit: '连接并登录',
     invalidAddress: '请填写有效的连接地址',
-    mixedContent:
-      '当前页面为 HTTPS，无法直接请求 HTTP 的 Weaviate（浏览器混合内容限制）。请使用 HTTPS 访问 Weaviate，或将前端与 API 置于同域反向代理下。',
     readyFailed: '就绪检查未通过（/.well-known/ready）',
     success: '连接成功',
   },
@@ -238,7 +236,7 @@ export default {
     baseUrl: 'Base URL',
     model: 'Model',
     apiKey: 'API Key',
-    embedPlaceholder: '浏览器直连可能受 CORS 限制',
+    embedPlaceholder: '例如 https://api.openai.com/v1（经 BFF /embedding 转发）',
     testEmbed: '测试嵌入',
     testedDims: '已测维度：{n}',
     queryCard: '查询',

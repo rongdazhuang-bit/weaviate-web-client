@@ -64,12 +64,12 @@ const router = createRouter({
         {
           path: 'ops/migration/api/run',
           name: 'migration-api-run',
-          component: () => import('@/views/ApiMigrationView.vue'),
+          component: () => import('@/views/MigrationView.vue'),
         },
         {
           path: 'ops/migration/api',
           name: 'migration-api',
-          component: () => import('@/views/MigrationApiGuideView.vue'),
+          component: () => import('@/views/ApiMigrationGuideView.vue'),
         },
         {
           path: 'ops/migration',

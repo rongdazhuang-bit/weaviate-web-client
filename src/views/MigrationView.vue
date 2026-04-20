@@ -126,7 +126,7 @@ import {
   runApiMigration,
   validateApiMigrationConnections,
   type ApiMigrationConfig,
-} from '@/api/apiMigration'
+} from '@/api/migration'
 
 const { t } = useI18n()
 

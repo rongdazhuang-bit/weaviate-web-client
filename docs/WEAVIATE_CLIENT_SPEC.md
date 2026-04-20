@@ -81,7 +81,7 @@
 
 **约束**
 
-- 所有请求经浏览器直连 Weaviate 时受 **CORS** 限制；规格要求文档中说明：**推荐**通过同域反向代理或开发环境代理解决跨域（见第 7 节）。
+- 所有 Weaviate 请求经 **同域 BFF（`/weaviate`）** 转发，避免浏览器直连实例的 **CORS** 问题；部署时需同时提供静态资源与 Node BFF（或等价网关转发），见 README。
 
 ### 4.3 向量检索与嵌入配置
 
@@ -166,12 +166,12 @@
 
 ### 7.3 嵌入服务
 
-- 浏览器直连第三方嵌入 API 可能遇到 CORS；**推荐**由同一后端代理转发（若首期纯前端，则必须在 Spec/README 中写明 CORS 限制与代理方案）。
+- 嵌入请求经 **同域 BFF 路径 `/embedding`** 转发，请求头 **`X-Embedding-Target`** 为 OpenAI 兼容 API 根地址（与界面中「嵌入服务 baseURL」一致）；避免浏览器直连第三方嵌入服务的 CORS。
 
 ### 7.4 跨域与代理
 
-- 开发环境：`vite.config.ts` 中 `server.proxy` 将 `/weaviate` 代理到用户填写的 Host:Port。
-- 生产：Nginx/Caddy 同域反代 Weaviate 与（可选）嵌入代理。
+- 开发环境：`vite.config.ts` 中 `server.proxy` 将 **`/weaviate`**、**`/embedding`** 代理到 Node BFF。
+- 生产：Nginx（或同类）同域反代至同一 Node BFF；BFF 再按请求头转发至 Weaviate / 嵌入上游。
 
 ---
 

@@ -19,28 +19,14 @@ export const useConnectionStore = defineStore('connection', () => {
   const remember = ref(false)
   const connected = ref(false)
 
-  /**
-   * 开发：Vite 同域 /weaviate。
-   * 生产：若构建时开启 VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY（如 Docker+Nginx+Node），则同样走 /weaviate，由服务端 Node 转发。
-   */
-  const useSameOriginWeaviateProxy = computed(
-    () =>
-      import.meta.env.DEV ||
-      import.meta.env.VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY === 'true',
-  )
-
   const connectionUrl = computed(() => {
     const h = host.value.trim()
     if (!h) return ''
     return `${protocol.value}://${h}:${port.value}`
   })
 
-  const baseURL = computed(() => {
-    if (useSameOriginWeaviateProxy.value) {
-      return `${window.location.origin}/weaviate`
-    }
-    return connectionUrl.value
-  })
+  /** 始终经同域 BFF `/weaviate`，由 Node 按 X-Weaviate-Target 转发至真实 Weaviate */
+  const baseURL = computed(() => `${window.location.origin}/weaviate`)
 
   function loadRemembered() {
     try {
@@ -50,7 +36,6 @@ export const useConnectionStore = defineStore('connection', () => {
         host?: string
         port?: number
         protocol?: string
-        useDevProxy?: boolean
       }
 
       if (typeof p.address === 'string' && p.address.trim()) {
@@ -96,7 +81,7 @@ export const useConnectionStore = defineStore('connection', () => {
     if (k) {
       headers['Authorization'] = k.startsWith('Bearer ') ? k : `Bearer ${k}`
     }
-    if (useSameOriginWeaviateProxy.value && connectionUrl.value) {
+    if (connectionUrl.value) {
       headers['X-Weaviate-Target'] = connectionUrl.value
     }
   }
@@ -113,7 +98,6 @@ export const useConnectionStore = defineStore('connection', () => {
     apiKey,
     remember,
     connected,
-    useSameOriginWeaviateProxy,
     connectionUrl,
     baseURL,
     loadRemembered,

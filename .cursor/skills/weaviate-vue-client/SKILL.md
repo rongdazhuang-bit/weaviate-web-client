@@ -6,7 +6,7 @@ description: >-
   working on weaviate-web-client: login/connect UI, instance overview (nodes/meta),
   collection sidebar, object/folder browsing, embedding-backed vector search,
   CORS, or UI theme/styling (ThemePicker, themes.css, wc CSS variables),
-  API migration (`ApiMigrationView`, `wc-migration-confirm-msgbox`),
+  API migration (`MigrationView`, `wc-migration-confirm-msgbox`),
   or Element Plus **button conventions** (default style = API migration style; see §10.8).
 ---
 
@@ -24,8 +24,8 @@ description: >-
 | 状态 | Pinia |
 | 路由 | Vue Router 4 |
 | 构建 | Vite |
-| Weaviate | HTTP：`axios` 调用 REST/GraphQL（见 `src/api/weaviate.ts`）；未在依赖中引入 `weaviate-client` 包 |
-| HTTP | axios 或 ofetch（项目内统一一种） |
+| Weaviate / 嵌入 | 浏览器经 **BFF**：同域 **`/weaviate`** + `X-Weaviate-Target`（`connection`）；**`/embedding`** + `X-Embedding-Target`（嵌入 API 根 URL，与 `embedding` store 的 `baseURL` 一致）。Node（`server/bff.ts`、`weaviate-proxy-core.ts`）转发；Weaviate 侧集成 `weaviate-client`（`weaviateOfficialClient.ts`）。前端 `axios` + `graphql-request`（`weaviate.ts`、`graphqlTransport.ts`、`embedding.ts`）；跨集群 API 迁移逻辑见 `migration.ts` |
+| HTTP | axios（项目内统一） |
 
 ## 2. 与产品规格的关系
 
@@ -35,7 +35,7 @@ description: >-
 ## 3. 连接与鉴权
 
 - 登录表单：**连接地址**（含协议与端口，见 `parseConnectionInput`）、**API Key**（可选）、**记住**（可选：将连接地址与 API Key 写入 `localStorage`，见 `connection` store）。
-- **开发环境（`import.meta.env.DEV`）**：`baseURL` 为同域 `/weaviate`，Vite 中间件按 `X-Weaviate-Target`（即 `connectionUrl`）转发；**生产**为直连 `connectionUrl`。
+- **开发与生产**：`baseURL` **始终**为同域 `/weaviate`；开发时 Vite `server.proxy` → Node BFF（默认 `VITE_WEAVIATE_BFF_TARGET`）；生产/Docker 由 Nginx→Node BFF。请求头 `X-Weaviate-Target` = 用户填写的 `connectionUrl`。
 - 连接校验：调用 `ready`/`meta` 后再进入 `/app` 路由。
 
 ## 4. 布局约定
@@ -61,14 +61,14 @@ description: >-
 
 ## 7. 跨域
 
-- 开发环境默认走 Vite `/weaviate` 代理；生产需直连或反向代理同域。
-- 嵌入 API 可配置 **baseURL** 指向同域网关。
+- Weaviate 流量经 **同域 `/weaviate`→Node BFF**；**嵌入 API** 经 **`/embedding`→BFF**，请求头 **`X-Embedding-Target`** 为目标服务根 URL（与 Pinia `embedding.baseURL` 一致语义）；开发 Vite、生产 Nginx 均反代至同一 Node BFF。
 
 ## 8. 代码结构建议（可随实现微调）
 
 ```
+server/        # Node BFF：/weaviate 转发（weaviate-proxy-core）、weaviate-client（weaviateOfficialClient）
 src/
-  api/           # weaviate REST/GraphQL、embedding 客户端
+  api/           # weaviate REST/GraphQL、embedding 客户端（经 BFF）
   stores/        # pinia：connection、embedding、theme 等
   views/         # Login, AppLayout, OverviewView, Collection*, Search
   components/    # ThemePicker 等；集合子页导航在 CollectionLayout（el-tabs）
@@ -126,13 +126,13 @@ src/
 
 ### 10.7 API 迁移：`ElMessageBox.confirm` 样式约定
 
-- **位置**：`src/views/ApiMigrationView.vue` 在「启动正式迁移」时使用 `ElMessageBox.confirm`，并传入 **`customClass: 'wc-migration-confirm-msgbox'`**。
+- **位置**：`src/views/MigrationView.vue` 在「启动正式迁移」时使用 `ElMessageBox.confirm`，并传入 **`customClass: 'wc-migration-confirm-msgbox'`**。
 - **透明弹层**：在 **`themes.css`** 中通过 `.el-message-box.wc-migration-confirm-msgbox` 与 `.el-overlay-message-box:has(.wc-migration-confirm-msgbox)` 将确认框面板与遮罩设为透明（保留细边框）；`sunshine` 主题另有覆盖，避免浅色下遮罩仍带底色。
 - **「确定」按钮**：Element Plus 将确认键渲染为 **`el-button--primary`**。本项目要求与 **全局默认按钮** 一致（非主色实心高亮），**不得**仅去掉 `type`（MessageBox API 无法控制）。应在 **`themes.css`** 中为  
   `.el-message-box.wc-migration-confirm-msgbox .el-message-box__btns .el-button--primary`  
   覆盖与 **`html[data-theme] .el-button--default`** 段相同的 `--el-button-*` 变量及 hover，与主内容区默认按钮对齐。
 - **业务规则**：迁移前校验源/目标地址经 `normalizeConnectionUrl` 后不得相同（见 `areSameWeaviateEndpoints`，`src/utils/connectionUrl.ts`）。
-- **向量数据**：`runApiMigration`（`src/api/apiMigration.ts`）对列表使用 `include=vector`；若某条在列表响应中仍无向量，则对该 UUID 再 `GET /v1/objects/{id}?include=vector` 补拉。写入时通过 `extractVectorsFromWeaviateObject`（`src/utils/weaviateVectors.ts`）解析 `vector` / `vectors`（含嵌套 `default`），批量与 PUT 均携带 `vector` 与 `vectors` 字段。
+- **向量数据**：`runApiMigration`（`src/api/migration.ts`）对列表使用 `include=vector`；若某条在列表响应中仍无向量，则对该 UUID 再 `GET /v1/objects/{id}?include=vector` 补拉。写入时通过 `extractVectorsFromWeaviateObject`（`src/utils/weaviateVectors.ts`）解析 `vector` / `vectors`（含嵌套 `default`），批量与 PUT 均携带 `vector` 与 `vectors` 字段。
 
 ### 10.8 按钮规范（项目默认 = API 迁移默认样式）
 
@@ -141,7 +141,7 @@ src/
 | 规则 | 说明 |
 |------|------|
 | **默认（推荐）** | 使用 `<el-button>` **不写 `type`**，或显式 `type="default"`。外观由 **`themes.css`** 中「默认按钮」规则统一：淡色底、**`--wc-accent` 描边与字色**、hover 略加深（选择器含 `html[data-theme] .el-button--default` 与 `:not(.el-button--primary):not(...)` 一段，约 **400–462 行**）。 |
-| **参考实现** | `src/views/ApiMigrationView.vue`（开始迁移、加载集合、开始、关闭）、`MigrationApiGuideView.vue`（开始迁移）、`DataMigrationView.vue`（备份/恢复/API 迁移）、`SearchView.vue`（测试嵌入、检索）、`CollectionObjectsView` / `CollectionFoldersView` 等表单与工具按钮。 |
+| **参考实现** | `src/views/MigrationView.vue`（开始迁移、加载集合、开始、关闭）、`ApiMigrationGuideView.vue`（API 迁移说明）、`DataMigrationView.vue`（备份/恢复/API 迁移）、`SearchView.vue`（测试嵌入、检索）、`CollectionObjectsView` / `CollectionFoldersView` 等表单与工具按钮。 |
 | **`type="primary"`** | **少用**。仅用于 **整页唯一关键主行动**、必须与常规按钮拉开层级时，例如 **`LoginView.vue`** 的「连接并登录」提交。登录后壳内 **禁止** 为普通表单操作、列表刷新、侧栏/卡片内操作滥用 `primary`。 |
 | **`text` / `link`** | 弱操作（如卡片标题栏「刷新」文字链）可用 `text`；若与产品要求冲突，可逐步改为与默认填充按钮一致（无 `type` + `size="small"`）。 |
 | **圆形图标按钮** | 顶栏 `ThemePicker`、`LanguageSwitcher`、退出等 **`circle` + 无 `type`**，属工具图标，不强制与填充默认按钮一致。 |

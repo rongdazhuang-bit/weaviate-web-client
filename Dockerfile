@@ -1,8 +1,6 @@
 # syntax=docker/dockerfile:1
-# 本地先构建前端（须带 Docker 同域代理开关），再放入本镜像。
-#   npm ci && npm run build
-# 建议在 .env.production 或构建命令前设置:
-#   VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY=true
+# 本地先构建前端再放入本镜像：npm ci && npm run build
+# 浏览器一律经同域 /weaviate 由容器内 Node BFF 转发（见 docker/nginx-default.conf）。
 #
 #   docker build -t weaviate-web-client:latest .
 

@@ -1,30 +1,25 @@
 import axios, { type AxiosInstance } from 'axios'
-import { useConnectionStore } from '@/stores/connection'
 import { normalizeConnectionUrl } from '@/utils/connectionUrl'
+import { graphqlQueryWithAxios } from '@/api/graphqlTransport'
 import { escapeGraphQLClassName, type WeaviateClass, type WeaviateMeta, type WeaviateObject } from '@/api/weaviate'
 
 /**
  * 任意 Weaviate 地址 + API Key 的客户端（用于数据迁移源/目标）。
- * 开发环境走同域 `/weaviate` + `X-Weaviate-Target`；生产直连（受 CORS 约束）。
+ * 始终经同域 BFF：`/weaviate` + `X-Weaviate-Target`（由 Node 转发，避免浏览器直连与 CORS）。
  */
 export function createWeaviateClientForUrl(connectionInput: string, apiKey: string): AxiosInstance {
   const base = normalizeConnectionUrl(connectionInput)
   if (!base) throw new Error('invalid connection url')
 
-  const conn = useConnectionStore()
   const client = axios.create({
     timeout: 120_000,
     validateStatus: (s) => s >= 200 && s < 500,
   })
 
   client.interceptors.request.use((config) => {
-    if (import.meta.env.DEV || conn.useSameOriginWeaviateProxy) {
-      config.baseURL = `${window.location.origin}/weaviate`
-      config.headers = config.headers ?? {}
-      ;(config.headers as Record<string, string>)['X-Weaviate-Target'] = base
-    } else {
-      config.baseURL = base
-    }
+    config.baseURL = `${window.location.origin}/weaviate`
+    config.headers = config.headers ?? {}
+    ;(config.headers as Record<string, string>)['X-Weaviate-Target'] = base
     const k = apiKey.trim()
     if (k) {
       config.headers = config.headers ?? {}
@@ -62,13 +57,11 @@ export async function aggregateCountRemote(
 ): Promise<number | null> {
   const g = escapeGraphQLClassName(className)
   const q = `{ Aggregate { ${g} { meta { count } } } }`
-  const { data: body, status } = await client.post<{
-    data?: { Aggregate?: Record<string, { meta?: { count?: number } }[]> }
-    errors?: { message: string }[]
-  }>('/v1/graphql', { query: q }, { headers: { 'Content-Type': 'application/json' } })
-  if (status !== 200) return null
-  if (body.errors?.length) return null
-  const agg = body.data?.Aggregate
+  const res = await graphqlQueryWithAxios<{
+    Aggregate: Record<string, { meta?: { count?: number } }[]>
+  }>(client, q)
+  if (res.errors?.length) return null
+  const agg = res.inner?.Aggregate
   if (!agg) return null
   const bucket = agg[className] ?? Object.values(agg)[0]
   const row = bucket?.[0]

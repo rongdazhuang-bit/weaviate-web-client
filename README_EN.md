@@ -1,6 +1,17 @@
 # weaviate-web-client
 
-A Weaviate vector database web client built with Vue 3 and Element Plus. Features and acceptance criteria are defined in `docs/WEAVIATE_CLIENT_SPEC.md`. Chinese readme: [`README.md`](README.md).
+Weaviate vector database web UI built with Vue 3 and Element Plus. Feature set and acceptance follow `docs/WEAVIATE_CLIENT_SPEC.md`.
+
+## Architecture (BFF)
+
+The browser **never** talks to Weaviate directly. It only calls same-origin **`/weaviate`**. **Embedding** (OpenAI-compatible) uses same-origin **`/embedding`** with **`X-Embedding-Target`** for the upstream API base URL. A **Node BFF** (`server/`, `tsx`) forwards both via `http-proxy`. The server loads the official [`weaviate-client`](https://www.npmjs.com/package/weaviate-client) (see `server/weaviateOfficialClient.ts`) for future SDK-backed Weaviate routes.
+
+| Environment | Behavior |
+|-------------|----------|
+| `npm run dev` | Runs `dev:bff` and Vite; Vite proxies `/weaviate` and `/embedding` to the BFF (`VITE_WEAVIATE_BFF_TARGET`) |
+| Production / Docker | Nginx serves static assets; `/weaviate` and `/embedding` are reverse-proxied to in-container Node BFF (`PORT`, default `3000`) |
+
+Optional copy for connection `ERR_NETWORK` messages can be set via Vite env vars — see `.env.example`. Same precedence as in the Chinese README: **per-environment** > **generic** > **i18n default**.
 
 ## Local development
 
@@ -9,82 +20,34 @@ npm install
 npm run dev
 ```
 
-Open the dev server URL in your browser (default `http://localhost:5173`).
+This starts the Node BFF and Vite together (`concurrently`). Open the dev server URL (default `http://localhost:5173`).
 
-In **development** (`npm run dev`), the app **automatically** proxies Weaviate requests through the same-origin path `/weaviate` to the instance URL you enter (via the `X-Weaviate-Target` header), reducing CORS issues from direct browser access to Weaviate. If the header is missing, it falls back to the `VITE_WEAVIATE_PROXY_TARGET` environment variable (default `http://127.0.0.1:8080`).
+To run only Vite and supply `/weaviate` elsewhere, use `npm run dev:vite` and point `VITE_WEAVIATE_BFF_TARGET` at a reachable BFF.
 
-**Production builds** default to **direct** browser access to the Weaviate URL from the login form. If you set `VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY=true` at build time (see Docker below), requests use same-origin `/weaviate` instead (Nginx→Node or your gateway). For direct access, use a same reverse proxy when you see cross-origin issues.
+If `X-Weaviate-Target` is missing, the BFF falls back to `WEAVIATE_PROXY_TARGET` / `VITE_WEAVIATE_PROXY_TARGET` (default `http://127.0.0.1:8080`). If `X-Embedding-Target` is missing, the BFF falls back to `EMBEDDING_PROXY_TARGET` (default `https://api.openai.com/v1`).
 
-You can override the message for connection failures (`ERR_NETWORK`) **per Vite environment** (otherwise i18n defaults apply):
-
-| Variable | When it applies |
-|----------|-----------------|
-| `VITE_CONNECTION_NETWORK_MESSAGE_DEVELOPMENT` | Only `npm run dev` (`import.meta.env.DEV === true`) |
-| `VITE_CONNECTION_NETWORK_MESSAGE_PRODUCTION` | Production bundles: `npm run build` output, `vite preview`, Docker image, etc. (`import.meta.env.PROD === true`) |
-| `VITE_CONNECTION_NETWORK_MESSAGE` | Fallback if the mode-specific variable is unset |
-
-Priority: **mode-specific** > **generic** > **i18n default**. See `.env.example` in the repo root.
-
-### Embedding API
-
-OpenAI-compatible embedding endpoints may be blocked by CORS in the browser; use a gateway or same-origin proxy when needed.
+For `vite preview`, configure the same `/weaviate` proxy in `vite.config.ts` and start the BFF first (`npm run start:proxy` or the Docker Node process).
 
 ## Build
 
-`npm run build` uses Vite **production** mode (same as `npm run build:prod`) and loads `.env`, `.env.production`, etc.
-
-Use `--mode` with a matching `.env.[mode]` file when you need environment-specific bundles, e.g. **staging**:
-
-```bash
-npm run build:staging   # loads .env.staging plus shared .env
-npm run preview:staging # preview with staging mode (for env used in vite.config)
-```
-
-| Script | Mode |
-|--------|------|
-| `build` / `build:prod` | `production` |
-| `build:staging` | `staging` (create `.env.staging` as needed) |
-| `dev:staging` | dev server with `staging` env |
-| `preview:staging` | `vite preview` with `staging` mode |
+`npm run build` uses Vite **production** mode and loads `.env`, `.env.production`, etc.
 
 ```bash
 npm run build
+npm run start:proxy   # separate terminal: BFF on 8787 unless PORT is set
 npm run preview
 ```
 
-## Docker deployment
+## Docker
 
-The image uses **Node 24** (`node:24-bookworm-slim`) plus **Nginx** (installed with `apt`): Nginx serves `dist/` and **reverse-proxies `/weaviate`** to a local **Node** process (`tsx` + `server/`), matching the dev Vite plugin. See `Dockerfile`, `docker/nginx-default.conf`, and `docker/entrypoint.sh`.
-
-**1. Build locally (enable same-origin Weaviate proxy)**
-
-Set `VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY=true` in `.env.production`, or:
+Image: **Node 24 bookworm-slim + Nginx**. Nginx serves `dist` and reverse-proxies `/weaviate` and `/embedding` to the local Node BFF. See `Dockerfile`, `docker/nginx-default.conf`, `docker/entrypoint.sh`.
 
 ```bash
-npm ci
-VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY=true npm run build
-```
-
-(on Windows CMD use `set VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY=true` before `npm run build`)
-
-**2. Build the image**
-
-```bash
+npm ci && npm run build
 docker build -t weaviate-web-client:latest .
-```
-
-**3. Run the container**
-
-`WEAVIATE_PROXY_TARGET` is the fallback when `X-Weaviate-Target` is missing (same idea as `VITE_WEAVIATE_PROXY_TARGET` in dev):
-
-```bash
 docker run --rm -e WEAVIATE_PROXY_TARGET=http://host.docker.internal:8080 -p 8080:80 weaviate-web-client:latest
 ```
 
-This maps container port **80** to host **8080**; open `http://localhost:8080`. Static files are served by Nginx; Weaviate calls use same-origin `/weaviate` and are forwarded by Node.
+## Stack
 
-If you do **not** want the in-container proxy, omit `VITE_USE_SAME_ORIGIN_WEAVIATE_PROXY` when building and host the static files another way.
-
-## Tech stack
-
-Vue 3, TypeScript, Vite, Pinia, Vue Router, Element Plus, Axios (Weaviate REST/GraphQL).
+Vue 3, TypeScript, Vite, Pinia, Vue Router, Element Plus, Axios (Weaviate via BFF); Node: `weaviate-client`, `http-proxy`.

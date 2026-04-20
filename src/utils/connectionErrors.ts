@@ -15,14 +15,6 @@ function networkConnectionMessageOverride(): string | undefined {
   return common || undefined
 }
 
-/** 当前页为 HTTPS 且连接地址为 HTTP 时，浏览器会拦截（混合内容），与 CORS 无关 */
-export function isMixedContentBlocked(connectionAddress: string): boolean {
-  if (typeof window === 'undefined') return false
-  if (window.location.protocol !== 'https:') return false
-  const t = connectionAddress.trim().toLowerCase()
-  return t.startsWith('http://')
-}
-
 /** 登录/连接 Weaviate 时的可读错误说明 */
 export function describeConnectionError(err: unknown): string {
   const t = i18n.global.t

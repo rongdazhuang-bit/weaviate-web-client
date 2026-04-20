@@ -1,5 +1,6 @@
 import type { AxiosInstance } from 'axios'
 import { createWeaviateAxios } from './http'
+import { graphqlQueryWithAxios } from './graphqlTransport'
 
 export interface WeaviateMeta {
   hostname?: string
@@ -160,13 +161,7 @@ export async function graphqlQuery<T = unknown>(
   query: string,
   client: AxiosInstance = createWeaviateAxios(),
 ): Promise<{ inner: T | undefined; errors?: GraphQLError[] }> {
-  const { data, status } = await client.post<{ data?: T; errors?: GraphQLError[] }>(
-    '/v1/graphql',
-    { query },
-    { headers: { 'Content-Type': 'application/json' } },
-  )
-  if (status !== 200) throw new Error(`GraphQL HTTP ${status}`)
-  return { inner: data.data, errors: data.errors }
+  return graphqlQueryWithAxios<T>(client, query)
 }
 
 export function escapeGraphQLClassName(name: string) {
