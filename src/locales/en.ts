@@ -286,8 +286,12 @@ export default {
     confirmOk: 'OK',
     confirmCancel: 'Cancel',
     logStart: 'Starting migration…',
+    logBackendJob: 'Migration job started on the server (direct to source/target Weaviate). Job id: {id}…',
     logValidateOk: 'Validation OK.',
     logFail: 'Migration failed: {msg}',
+    errStartJob: 'Failed to start the server migration job',
+    errWsConnect: 'Could not open the progress WebSocket',
+    errWsClosed: 'Progress connection closed unexpectedly; check the log or retry',
     migrateDone: 'Migration finished',
     migrateDoneWithBatchFailures:
       'Migration finished, but {n} batch write(s) failed in total (see the log for details)',

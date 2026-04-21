@@ -285,8 +285,12 @@ export default {
     confirmOk: '确定',
     confirmCancel: '取消',
     logStart: '开始执行迁移…',
+    logBackendJob: '已在服务端启动迁移任务（直连源/目标 Weaviate），任务 id：{id}…',
     logValidateOk: '连接验证通过。',
     logFail: '迁移失败：{msg}',
+    errStartJob: '无法启动后台迁移任务',
+    errWsConnect: '无法建立进度连接（WebSocket）',
+    errWsClosed: '进度连接意外断开，请查看日志或重试',
     migrateDone: '迁移完成',
     migrateDoneWithBatchFailures:
       '迁移已结束，但批量写入累计有 {n} 条未成功（详见日志）',

@@ -18,6 +18,15 @@ RUN npm ci --omit=dev
 COPY dist/ /usr/share/nginx/html/
 COPY docker/nginx-default.conf /etc/nginx/conf.d/default.conf
 RUN nginx -t
+# 后台迁移任务在 Node 中加载（tsx）；需与 server/migrationJob 的 import 链一致，且勿引入 weaviate.ts（Pinia）
+COPY tsconfig.json ./
+COPY src/utils/connectionUrl.ts ./src/utils/connectionUrl.ts
+COPY src/utils/weaviateVectors.ts ./src/utils/weaviateVectors.ts
+COPY src/api/graphqlTransport.ts ./src/api/graphqlTransport.ts
+COPY src/api/weaviateCore.ts ./src/api/weaviateCore.ts
+COPY src/api/weaviateRemote.ts ./src/api/weaviateRemote.ts
+COPY src/api/migrationTypes.ts ./src/api/migrationTypes.ts
+COPY src/api/migrationRun.ts ./src/api/migrationRun.ts
 COPY server/ ./server/
 COPY docker/entrypoint.sh /entrypoint.sh
 # Windows 构建上下文常为 CRLF，strip 后 shebang 才能被内核正确识别

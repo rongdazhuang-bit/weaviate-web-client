@@ -133,7 +133,6 @@ import { fetchRemoteSchema, createWeaviateClientForUrl } from '@/api/weaviateRem
 import {
   API_MIGRATION_NOT_READY_DETAIL,
   ApiMigrationValidationError,
-  runApiMigration,
   validateApiMigrationConnections,
   type ApiMigrationConfig,
 } from '@/api/migration'
@@ -287,25 +286,101 @@ async function onStartClick() {
   migrating.value = true
   appendLog(t('apiMigration.logStart'))
 
+  let ws: WebSocket | null = null
   try {
-    const { batchItemFailures } = await runApiMigration(
-      cfg,
-      (line) => appendLog(line),
-      (pct) => {
-        progressPct.value = pct
-      },
-    )
-    if (batchItemFailures > 0) {
-      ElMessage.warning(t('apiMigration.migrateDoneWithBatchFailures', { n: batchItemFailures }))
-    } else {
-      ElMessage.success(t('apiMigration.migrateDone'))
+    const res = await fetch('/api/migration/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg),
+    })
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      throw new Error(detail || `${t('apiMigration.errStartJob')} (HTTP ${res.status})`)
     }
+    const startBody = (await res.json()) as { jobId?: string }
+    const jobId = startBody.jobId
+    if (!jobId) throw new Error(t('apiMigration.errStartJob'))
+
+    appendLog(t('apiMigration.logBackendJob', { id: jobId.slice(0, 8) }))
+
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    ws = new WebSocket(
+      `${proto}//${window.location.host}/api/migration/ws?jobId=${encodeURIComponent(jobId)}`,
+    )
+
+    await new Promise<void>((resolve, reject) => {
+      const tmo = window.setTimeout(() => reject(new Error(t('apiMigration.errWsConnect'))), 20_000)
+      ws!.onopen = () => {
+        window.clearTimeout(tmo)
+        resolve()
+      }
+      ws!.onerror = () => {
+        window.clearTimeout(tmo)
+        reject(new Error(t('apiMigration.errWsConnect')))
+      }
+    })
+
+    let settled = false
+    await new Promise<void>((resolve, reject) => {
+      const finishOk = () => {
+        if (settled) return
+        settled = true
+        resolve()
+      }
+      const finishErr = (e: Error) => {
+        if (settled) return
+        settled = true
+        reject(e)
+      }
+
+      ws!.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(String(ev.data)) as
+            | { type: 'log'; line: string }
+            | { type: 'progress'; pct: number }
+            | { type: 'done'; batchItemSuccesses: number; batchItemFailures: number }
+            | { type: 'error'; message: string }
+
+          if (msg.type === 'log') appendLog(msg.line)
+          else if (msg.type === 'progress') progressPct.value = msg.pct
+          else if (msg.type === 'done') {
+            progressPct.value = 100
+            const batchItemFailures = msg.batchItemFailures
+            if (batchItemFailures > 0) {
+              ElMessage.warning(t('apiMigration.migrateDoneWithBatchFailures', { n: batchItemFailures }))
+            } else {
+              ElMessage.success(t('apiMigration.migrateDone'))
+            }
+            migrating.value = false
+            finishOk()
+          } else if (msg.type === 'error') {
+            appendLog(t('apiMigration.logFail', { msg: msg.message }))
+            ElMessage.error(msg.message)
+            migrating.value = false
+            finishErr(new Error(msg.message))
+          }
+        } catch {
+          /* ignore malformed frames */
+        }
+      }
+
+      ws!.onclose = () => {
+        if (settled) return
+        migrating.value = false
+        finishErr(new Error(t('apiMigration.errWsClosed')))
+      }
+    })
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     appendLog(t('apiMigration.logFail', { msg }))
     ElMessage.error(msg)
-  } finally {
     migrating.value = false
+  } finally {
+    try {
+      ws?.close()
+    } catch {
+      /* ignore */
+    }
   }
 }
 

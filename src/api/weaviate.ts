@@ -1,51 +1,17 @@
 import type { AxiosInstance } from 'axios'
 import { createWeaviateAxios } from './http'
 import { graphqlQueryWithAxios } from './graphqlTransport'
+import type { GraphQLError, WeaviateClass, WeaviateMeta, WeaviateObject } from './weaviateCore'
+import { escapeGraphQLClassName } from './weaviateCore'
 
-export interface WeaviateMeta {
-  hostname?: string
-  version?: string
-  modules?: Record<string, unknown>
-}
-
-export interface WeaviateClass {
-  class: string
-  description?: string
-  vectorizer?: string
-  vectorIndexType?: string
-  properties?: WeaviateProperty[]
-  replicationConfig?: Record<string, unknown>
-  shardingConfig?: Record<string, unknown>
-  /** REST 字段名，见 GET /v1/schema/{className} */
-  vectorIndexConfig?: Record<string, unknown>
-  /** 个别文档/版本别称，展示时与 vectorIndexConfig 二选一 */
-  vectorConfig?: Record<string, unknown>
-  multiTenancyConfig?: Record<string, unknown>
-  invertedIndexConfig?: Record<string, unknown>
-}
-
-export interface WeaviateProperty {
-  name: string
-  dataType: string[]
-  description?: string
-  indexInverted?: boolean
-  tokenization?: string
-}
-
-export interface WeaviateObject {
-  class?: string
-  id?: string
-  properties?: Record<string, unknown>
-  vector?: number[]
-  /** 命名向量（Weaviate 多向量） */
-  vectors?: Record<string, number[]>
-  creationTimeUnix?: number
-  lastUpdateTimeUnix?: number
-}
-
-export interface GraphQLError {
-  message: string
-}
+export type {
+  GraphQLError,
+  WeaviateClass,
+  WeaviateMeta,
+  WeaviateObject,
+  WeaviateProperty,
+} from './weaviateCore'
+export { escapeGraphQLClassName } from './weaviateCore'
 
 export async function fetchMeta(client: AxiosInstance = createWeaviateAxios()) {
   const { data, status } = await client.get<WeaviateMeta>('/v1/meta')
@@ -162,13 +128,6 @@ export async function graphqlQuery<T = unknown>(
   client: AxiosInstance = createWeaviateAxios(),
 ): Promise<{ inner: T | undefined; errors?: GraphQLError[] }> {
   return graphqlQueryWithAxios<T>(client, query)
-}
-
-export function escapeGraphQLClassName(name: string) {
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
-    return `\`${name.replace(/`/g, '\\`')}\``
-  }
-  return name
 }
 
 export async function aggregateCount(

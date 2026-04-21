@@ -19,6 +19,11 @@ export default defineConfig(({ mode }) => {
      */
     server: {
       proxy: {
+        '/api': {
+          target: bffTarget,
+          changeOrigin: true,
+          ws: true,
+        },
         '/weaviate': {
           target: bffTarget,
           changeOrigin: true,
@@ -32,6 +37,11 @@ export default defineConfig(({ mode }) => {
     /** `vite preview` 同样需要 BFF */
     preview: {
       proxy: {
+        '/api': {
+          target: bffTarget,
+          changeOrigin: true,
+          ws: true,
+        },
         '/weaviate': {
           target: bffTarget,
           changeOrigin: true,
