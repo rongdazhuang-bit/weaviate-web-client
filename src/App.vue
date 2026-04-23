@@ -8,7 +8,6 @@
       <div class="app-main">
         <router-view />
       </div>
-      <AppFooter />
     </div>
   </el-config-provider>
 </template>
@@ -20,7 +19,6 @@ import { useI18n } from 'vue-i18n'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'
 import { useRequestLoadingStore } from '@/stores/requestLoading'
-import AppFooter from '@/components/AppFooter.vue'
 
 const { t, locale } = useI18n()
 const { active: globalLoading } = storeToRefs(useRequestLoadingStore())
