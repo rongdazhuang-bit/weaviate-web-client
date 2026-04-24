@@ -332,6 +332,29 @@ onMounted(() => load())
 </script>
 
 <style scoped>
+/* 与 collection-tab-content--fill 配合：卡片头固定，仅 body 滚动 */
+.page {
+  min-height: 0;
+}
+
+.page :deep(.el-card) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page :deep(.el-card__header) {
+  flex-shrink: 0;
+}
+
+.page :deep(.el-card__body) {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
 .ml {
   margin-left: 8px;
 }

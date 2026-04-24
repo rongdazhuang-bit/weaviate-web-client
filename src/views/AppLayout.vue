@@ -578,7 +578,7 @@ onUnmounted(() => {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 22px 24px 28px;
+  padding: 22px 24px 0;
 }
 
 .main-scroll--fill {

@@ -11,7 +11,9 @@
     </el-tabs>
     <div
       class="collection-tab-content"
-      :class="{ 'collection-tab-content--fill': isObjectsRoute }"
+      :class="{
+        'collection-tab-content--fill': isObjectsRoute || isOverviewRoute,
+      }"
     >
       <router-view />
     </div>
@@ -35,6 +37,7 @@ const activeTab = computed(() => {
 })
 
 const isObjectsRoute = computed(() => route.name === 'collection-objects')
+const isOverviewRoute = computed(() => route.name === 'collection-overview')
 
 function onTabChange(name: string | number) {
   const raw = route.params.name as string
